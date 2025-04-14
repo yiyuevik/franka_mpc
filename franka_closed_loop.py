@@ -7,8 +7,8 @@ cartpole_closed_loop.py
 
 
 import config
-from double_pendulum_ocp import create_ocp_solver, simulate_closed_loop  
-from double_pendulum_utils import plot_cartpole_trajectories, animate_cartpole
+from franka_ocp import create_ocp_solver, simulate_closed_loop  
+from franka_utils import plot_cartpole_trajectories, animate_cartpole
 import time
 import matplotlib.pyplot as plt
 import numpy as np
@@ -17,13 +17,13 @@ from scipy.io import savemat
 def main():
 
     # 1) 生成初始状态样本
-    x0 = np.array([-3, 0, np.pi, 0, 2.98, 0])
+    x0 = np.array([0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0]) # 初始状态
     # 2) 闭环仿真
     ## 参数设置
     N_sim = 120  # 模拟步数
-    sim_round = 626 
+    sim_round = 1
     all_simX = np.zeros((N_sim+1,config.Num_State,sim_round))
-    all_simU = np.zeros((N_sim,1,sim_round))
+    all_simU = np.zeros((N_sim,config.Num_Input,sim_round))
     all_time = np.zeros((sim_round))
     
     SimX_typ = []

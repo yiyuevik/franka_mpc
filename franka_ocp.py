@@ -1,9 +1,3 @@
-"""
-cartpole_ocp.py
-
-一个示例：从 config.py 中读取 Q, R, P, Horizon, Ts 等，来搭建 OCP。
-"""
-
 import numpy as np
 import casadi as ca
 from acados_template import AcadosOcp, AcadosOcpSolver, AcadosSimSolver
@@ -11,7 +5,7 @@ import config  # 引用 config.py
 import scipy.linalg
 import time
 # 导入 CartPole 模型
-from double_pendulum_model import export_cartpole_ode_model
+from franka_model import export_franka_ode_model
 
 def clear_solver_state(ocp_solver, N_horizon):
     # 清空状态和控制输入
@@ -24,9 +18,9 @@ def get_guess_from_solver_result(ocp_solver, N_horizon):
     u_guess = np.zeros(N_horizon)
     x_guess = np.zeros((config.Num_State, N_horizon+1))
     for i in range(N_horizon-1):
-        u_guess[i] = ocp_solver.get(i+1, "u")
+        u_guess[:, i] = ocp_solver.get(i+1, "u")
         x_guess[:, i] = ocp_solver.get(i+1, "x")
-    u_guess[N_horizon-1] = ocp_solver.get(N_horizon-1, "u")
+    u_guess[:, N_horizon-1] = ocp_solver.get(N_horizon-1, "u")
     x_guess[:, N_horizon-1] = ocp_solver.get(N_horizon, "x")
     x_guess[:, N_horizon] = ocp_solver.get(N_horizon, "x")
     return u_guess, x_guess
@@ -46,7 +40,7 @@ def create_ocp_solver(x0):
 
 
     # 加载 CartPole 模型
-    model = export_cartpole_ode_model()
+    model = export_franka_ode_model()
     ocp.model = model
     ocp.model.x = model.x
     ocp.model.u = model.u
@@ -54,39 +48,30 @@ def create_ocp_solver(x0):
     # 成本函数设置
     ocp.cost.cost_type = 'NONLINEAR_LS'
     
-    ocp.model.cost_y_expr = ca.vertcat(model.x[0],  # x (位置)
-                             model.x[1],  # xdot (速度)
-                             np.sin(model.x[2]/2),  # theta1
-                             model.x[3],  # omega1
-                             np.sin(model.x[4]/2), # theta2
-                             model.x[5], # omega2
-                             model.u) 
-    # ocp.model.cost_y_expr =  ca.vertcat(model.x, model.u)
+    ocp.model.cost_y_expr = ca.vertcat(model.x, model.u)
     ocp.cost.W = scipy.linalg.block_diag(config.Q, config.R)
 
-    ocp.cost.yref = np.zeros(Nx + Nu)  # (6维)
+    ocp.cost.yref = np.zeros(Nx + Nu)
 
     # 终端成本
     ocp.cost.cost_type_e = 'NONLINEAR_LS'
-    ocp.model.cost_y_expr_e = ca.vertcat(model.x[0],  # x (位置)
-                             model.x[1],  # xdot (速度)
-                             np.sin(model.x[2]/2),  # cos(theta1)
-                             model.x[3],  # omega1
-                             np.sin(model.x[4]/2),  # cos(theta2)
-                             model.x[5])  # omega2
-    # ocp.model.cost_y_expr_e =  ca.vertcat(model.x)
+    ocp.model.cost_y_expr_e =  ca.vertcat(model.x)
     ocp.cost.W_e = config.P
 
-    ocp.cost.yref_e = np.zeros(Nx)     # (5维)
+    ocp.cost.yref_e = np.zeros(Nx)
     
     # 约束条件
+    # ocp.constraints.idxbu = np.arange(Nu)
+    # ocp.constraints.lbu = -config.tau_max*np.ones(Nu)
+    # ocp.constraints.ubu = +config.tau_max*np.ones(Nu)
+
+    # ocp.constraints.idxbx = np.arange(Nx/2)    # 这里把 q(前7个)放到bx中
+    # ocp.constraints.lbx = q_min
+    # ocp.constraints.ubx = q_max
+
+    #初始状态约束
     ocp.constraints.x0 = x0
-    ocp.constraints.lbu = np.array([-config.Fmax])
-    ocp.constraints.ubu = np.array([+config.Fmax])
-    # ocp.constraints.ubx = np.array([20])
-    # ocp.constraints.lbx = np.array([-20])
-    ocp.constraints.idxbu = np.array([0])  # 控制量u只有1维
-    # ocp.constraints.idxbx = np.array([0])
+
 
     # 求解器设置
     ocp.solver_options.qp_solver = 'PARTIAL_CONDENSING_HPIPM'
@@ -107,15 +92,15 @@ def create_ocp_solver(x0):
 
 def simulate_closed_loop(ocp, ocp_solver, integrator, x0, x_init_guess, N_sim=50,nMaxGuess: int = 1):
     
-    nx = ocp.model.x.size()[0]  # Should be 6
-    nu = ocp.model.u.size()[0]  # Should be 1
+    nx = ocp.model.x.size()[0]  # Should be 14
+    nu = ocp.model.u.size()[0]  # Should be 7
 
     # 初始状态
     simX = np.zeros((N_sim+1, nx))
     simU = np.zeros((N_sim, nu))
     simCost = np.zeros((N_sim, 1))
     simX[0, :] = x0  # 初始化状态为传入的 x0
-    success = True
+
     # 闭环仿真
     for i in range(N_sim):
         retries = 0
