@@ -7,7 +7,7 @@ config.py
 import  numpy as np
 
 Horizon = 128          # 预测步数
-Ts = 0.01              # 采样时间
+Ts = 0.001              # 采样时间
 Num_State = 14         #  状态维数（位置 + 速度）
 Num_Input = 7         # 控制量维数（推力）
 gravity = [0, 0, -9.81] # 重力加速度
@@ -16,45 +16,13 @@ tip = "panda_link8"
 tau_max = 100.0 # 最大关节力矩
 
 # 状态和控制量的权重矩阵
-Q = np.diag([1e-1,  
-            1e-1,
-            1e-1,
-            1e-1,   
-            1e-1,
-            1e-1,
-            1e-1, 
-            1e-1,
-            1e-1,
-            1e-1,
-            1e-1, 
-            1e-1,
-            1e-1,
-            1e-1,
-            ])   # 权重矩阵 Q(14x14) 位置 + 速度
+Q = np.eye(3) * 10.0   
 
-R = np.diag([1e-2,
-             1e-2,
-             1e-2,
-             1e-2,   
-             1e-2,
-             1e-2,
-             1e-2])
+R = np.eye(7) * 0.5    
 
-P = np.diag([1e-1,  
-            1e-1,
-            1e-1,
-            1e-1,   
-            1e-1,
-            1e-1,
-            1e-1, 
-            1e-1,
-            1e-1,
-            1e-1,
-            1e-1, 
-            1e-1,
-            1e-1,
-            1e-1,
-            ]) 
+P = np.eye(3) * 10.0
+
+
 def GenerateRandomInitialGuess(sim_round = 0, min_random=-6000.0, max_random=6000.0):
     """
     生成一个随机的 (u_ini_guess, x_ini_guess)

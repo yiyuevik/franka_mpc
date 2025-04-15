@@ -15,7 +15,7 @@ def clear_solver_state(ocp_solver, N_horizon):
     ocp_solver.set(N_horizon, "x", np.zeros_like(ocp_solver.get(N_horizon,"x")))
 
 def get_guess_from_solver_result(ocp_solver, N_horizon):
-    u_guess = np.zeros(N_horizon)
+    u_guess = np.zeros((config.Num_Input, N_horizon))
     x_guess = np.zeros((config.Num_State, N_horizon+1))
     for i in range(N_horizon-1):
         u_guess[:, i] = ocp_solver.get(i+1, "u")
@@ -46,19 +46,21 @@ def create_ocp_solver(x0):
     ocp.model.u = model.u
 
     # 成本函数设置
+    p_target = np.array([0.3, 0.3, 0.5])  # 你可以自定义目标位置
+    u_target = np.array([0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0])  # 控制输入目标
     ocp.cost.cost_type = 'NONLINEAR_LS'
-    
-    ocp.model.cost_y_expr = ca.vertcat(model.x, model.u)
+    ocp.model.cost_y_expr = model.cost_y_expr
     ocp.cost.W = scipy.linalg.block_diag(config.Q, config.R)
-
-    ocp.cost.yref = np.zeros(Nx + Nu)
+    ocp.cost.yref = np.concatenate((p_target, u_target))
+    ocp.dims.ny = ocp.cost.yref.shape[0]
+    
 
     # 终端成本
     ocp.cost.cost_type_e = 'NONLINEAR_LS'
-    ocp.model.cost_y_expr_e =  ca.vertcat(model.x)
+    ocp.model.cost_y_expr_e = model.cost_y_expr_e
     ocp.cost.W_e = config.P
-
-    ocp.cost.yref_e = np.zeros(Nx)
+    ocp.cost.yref_e = p_target
+    ocp.dims.ny_e = 3
     
     # 约束条件
     # ocp.constraints.idxbu = np.arange(Nu)
@@ -129,25 +131,6 @@ def simulate_closed_loop(ocp, ocp_solver, integrator, x0, x_init_guess, N_sim=50
                 print(f"Error in MPC_solve: {str(e)}, change guess")
                 print("current step:", i, ", retries=", retries)
                 time.sleep(2)
-                if i == 0 :
-                    clear_solver_state(ocp_solver, config.Horizon)
-                    for j in range(0,config.Horizon,20):
-                        ocp_solver.set(j, "x", x_init_guess)
-                    ocp_solver.set(0, "x", x0)
-                else:
-                    u_range = np.max(u_guess) - np.min(u_guess)
-                    x_range = np.max(x_guess) - np.min(x_guess)
-                    u_noise_range = 0.1 * u_range
-                    x_noise_range = 0.1 * x_range
-                    u_increment = np.random.uniform(-u_noise_range, u_noise_range, size=u_guess.shape)
-                    x_increment = np.random.uniform(-x_noise_range, x_noise_range, size=x_guess.shape)
-                    u_guess = u_guess + u_increment
-                    x_guess = x_guess + x_increment
-                    for j in range(config.Horizon):
-                        ocp_solver.set(j, "u", u_guess[j])
-                        ocp_solver.set(j, "x", x_guess[:, j])
-                    ocp_solver.set(config.Horizon, "x", x_guess[:, -1])
-            
             retries += 1
             if retries == nMaxGuess-1:
                 print("set initial guess = 2pi")
@@ -158,7 +141,6 @@ def simulate_closed_loop(ocp, ocp_solver, integrator, x0, x_init_guess, N_sim=50
             print("MPC solve failed after max retries")
             break
             
-    
 
     # print("x_final:", simX[-1,:])
     clear_solver_state(ocp_solver, config.Horizon)

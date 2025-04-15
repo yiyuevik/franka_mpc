@@ -30,7 +30,7 @@ def export_franka_ode_model():
     x_sym = ca.SX.sym('x', nq)       # [q(7), qdot(7)]
     u_sym = ca.SX.sym('u', nu)         # [tau(7)]
     xdot_sym = ca.SX.sym('xdot', nq) # [qdot(7), qddot(7)]
-
+    
     q     = x_sym[0:nq//2] # 关节角度
     qdot  = x_sym[nq//2:nq]  # 关节角速度
     tau   = u_sym   # 关节力矩
@@ -46,6 +46,13 @@ def export_franka_ode_model():
     G = G_sym(q)
     qddot = ca.mtimes(ca.inv(M), tau - C - G) # 计算加速度
 
+    fk_dict = franka.get_forward_kinematics(root, tip)
+    T_fk_fun = fk_dict["T_fk"]  # 4x4 CasADi Function
+    q_sym = x_sym[:7]
+    T_fk_expr = T_fk_fun(q_sym)        # 4x4 齐次矩阵表达式
+    p_expr_for_pos = T_fk_expr[:3, 3]          # 末端位置 p(q)
+
+
     f_expl = ca.vertcat(qdot, qddot) # 状态的导数
     f_impl = xdot_sym - f_expl # 隐式方程
 
@@ -59,5 +66,6 @@ def export_franka_ode_model():
     model.p = []
     model.f_expl_expr = f_expl
     model.f_impl_expr = f_impl
-
+    model.cost_y_expr = ca.vertcat(p_expr_for_pos, u_sym)
+    model.cost_y_expr_e = p_expr_for_pos
     return model
