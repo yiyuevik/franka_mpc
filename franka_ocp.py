@@ -106,6 +106,7 @@ def simulate_closed_loop(ocp, ocp_solver, integrator, x0, x_init_guess, N_sim=50
     # 闭环仿真
     for i in range(N_sim):
         retries = 0
+        success = True
         while retries < nMaxGuess:
             try:
                 u_opt = ocp_solver.solve_for_x0(x0_bar = simX[i, :])
@@ -114,7 +115,7 @@ def simulate_closed_loop(ocp, ocp_solver, integrator, x0, x_init_guess, N_sim=50
                 clear_solver_state(ocp_solver, config.Horizon) #按道理不太需要
                 
                 for j in range(config.Horizon):
-                    ocp_solver.set(j, "u", u_guess[j])
+                    ocp_solver.set(j, "u", u_guess[:, j])
                     ocp_solver.set(j, "x", x_guess[:, j])
                 ocp_solver.set(config.Horizon, "x", x_guess[:, -1])
 

@@ -1,10 +1,8 @@
 """
-cartpole_closed_loop.py
 我没有写main.py
-此即为主入口脚本：读取/设置模型参数(在 config.py)，构造并求解 OCP，然后进行闭环仿真 + 可视化。
+此即为主入口脚本：读取/设置模型参数(在 config.py)，构造并求解 OCP, 然后进行闭环仿真 + 可视化。
 运行方式: python cartpole_closed_loop.py
 """
-
 
 import config
 from franka_ocp import create_ocp_solver, simulate_closed_loop  
@@ -14,10 +12,11 @@ import matplotlib.pyplot as plt
 import numpy as np
 from scipy.io import savemat
 
-def main():
 
+def main():
+    
     # 1) 生成初始状态样本
-    x0 = np.array([0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0]) # 初始状态
+    x0 = np.array([ 0,0,0,0,0,0,0 , 0, 0, 0, 0, 0, 0, 0]) # 初始状态
     # 2) 闭环仿真
     ## 参数设置
     N_sim = 200  # 模拟步数

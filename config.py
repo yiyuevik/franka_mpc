@@ -1,7 +1,7 @@
 """
 config.py
 
-集中管理 MPC 相关设置（Q, R, P, Horizon, Ts 等）
+集中管理 MPC 相关设置(Q, R, P, Horizon, Ts 等）
 以及初始状态采样与随机初始猜测生成函数等。
 """
 import  numpy as np
@@ -30,7 +30,8 @@ def GenerateRandomInitialGuess(sim_round = 0, min_random=-6000.0, max_random=600
     """
     u_ini_guess = np.random.uniform(min_random, max_random, 1)[0]
   
-    x_ini_guess = np.array([0, 0, 0, 0, 0, 0, 0,0,0,0,0,0,0,0]) # 初始状态
+    x_ini_guess = np.array([ 0.85114759,0.22895749, -0.00465471, -1.69075889, -0.24523397,  0.20150836,
+  0. , 0, 0, 0, 0, 0, 0, 0])# 初始状态
       
     return u_ini_guess, x_ini_guess
 
