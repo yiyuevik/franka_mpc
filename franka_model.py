@@ -66,6 +66,6 @@ def export_franka_ode_model():
     model.p = []
     model.f_expl_expr = f_expl
     model.f_impl_expr = f_impl
-    model.cost_y_expr = ca.vertcat(p_expr_for_pos, u_sym)
-    model.cost_y_expr_e = p_expr_for_pos
+    model.cost_y_expr = ca.vertcat(x_sym, u_sym)
+    model.cost_y_expr_e = x_sym
     return model

@@ -16,12 +16,13 @@ tip = "panda_link8"
 tau_max = 100.0 # 最大关节力矩
 
 # 状态和控制量的权重矩阵
-Q = np.eye(3) * 10.0   
+Q = np.eye(14) * 10.0 
+Q[np.diag_indices(7)] = 1000.0
 
 R = np.eye(7) * 0.5    
 
-P = np.eye(3) * 10.0
-
+P = np.eye(14) * 10.0
+P[np.diag_indices(7)] = 1000.0
 
 def GenerateRandomInitialGuess(sim_round = 0, min_random=-6000.0, max_random=6000.0):
     """

@@ -46,7 +46,7 @@ def create_ocp_solver(x0):
     ocp.model.u = model.u
 
     # 成本函数设置
-    p_target = np.array([0.3, 0.3, 0.5])  # 你可以自定义目标位置
+    p_target = np.array([0.5,0.5,0.5,0.5,0.5,0.5,0.5,0,0,0,0,0,0,0])  # 你可以自定义目标位置
     u_target = np.array([0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0])  # 控制输入目标
     ocp.cost.cost_type = 'NONLINEAR_LS'
     ocp.model.cost_y_expr = model.cost_y_expr
@@ -85,9 +85,9 @@ def create_ocp_solver(x0):
     # ocp.solver_options.globalization = 'MERIT_BACKTRACKING'
 
     # 构造 OCP 求解器
-    acados_solver = AcadosOcpSolver(ocp, json_file="acados_ocp_double_pendulum.json")
+    acados_solver = AcadosOcpSolver(ocp, json_file="acados_ocp_double_pendulum.json", generate=False, build=False)
 
-    acados_integrator = AcadosSimSolver(ocp, json_file = "acados_ocp_double_pendulum.json")
+    acados_integrator = AcadosSimSolver(ocp, json_file = "acados_ocp_double_pendulum.json", generate=False, build=False)
 
     return ocp, acados_solver, acados_integrator
 

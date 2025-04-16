@@ -19,7 +19,7 @@ def main():
     x0 = np.array([ 0,0,0,0,0,0,0 , 0, 0, 0, 0, 0, 0, 0]) # 初始状态
     # 2) 闭环仿真
     ## 参数设置
-    N_sim = 200  # 模拟步数
+    N_sim = 250  # 模拟步数
     sim_round = 1
     all_simX = np.zeros((N_sim+1,config.Num_State,sim_round))
     all_simU = np.zeros((N_sim,config.Num_Input,sim_round))
