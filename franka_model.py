@@ -25,14 +25,18 @@ def export_franka_ode_model():
     path_to_franka = absPath = os.path.dirname(os.path.abspath(__file__)) + '/urdf/panda_arm.urdf' 
     franka.from_file(path_to_franka)
     # 常量定义
-    nq = config.Num_State  # 状态数量
+    nx = config.Num_State  # 状态数量
+    nq = config.Num_Q  # 关节数量
+    nv = config.Num_Velocity  # 关节速度数量
     nu = config.Num_Input  # 控制输入数量
-    x_sym = ca.SX.sym('x', nq)       # [q(7), qdot(7)]
+    x_sym = ca.SX.sym('x', nx)       # [q(7), qdot(7), p(3)]
     u_sym = ca.SX.sym('u', nu)         # [tau(7)]
-    xdot_sym = ca.SX.sym('xdot', nq) # [qdot(7), qddot(7)]
+    xdot_sym = ca.SX.sym('xdot', nx) # [qdot(7), qddot(7), p(3)]
+
     
-    q     = x_sym[0:nq//2] # 关节角度
-    qdot  = x_sym[nq//2:nq]  # 关节角速度
+    q     = x_sym[:nq] # 关节角度
+    qdot  = x_sym[nq:nq+nv]  # 关节角速度
+    p  = x_sym[14:17]
     tau   = u_sym   # 关节力矩
 
     root = config.root
@@ -44,16 +48,17 @@ def export_franka_ode_model():
     M = M_sym(q)
     C = C_sym(q, qdot)
     G = G_sym(q)
-    qddot = ca.mtimes(ca.inv(M), tau - C - G) # 计算加速度
+    qddot = ca.mtimes(ca.inv(M), tau - C - G)  # 计算加速度
 
     fk_dict = franka.get_forward_kinematics(root, tip)
     T_fk_fun = fk_dict["T_fk"]  # 4x4 CasADi Function
-    q_sym = x_sym[:7]
-    T_fk_expr = T_fk_fun(q_sym)        # 4x4 齐次矩阵表达式
-    p_expr_for_pos = T_fk_expr[:3, 3]          # 末端位置 p(q)
+    T_fk_expr = T_fk_fun(q)        # 4x4 齐次矩阵表达式
+    p_expr  = T_fk_expr[:3, 3]          # 末端位置 p(q)
+    J_pos = ca.jacobian(p_expr, q) 
+    pdot = ca.mtimes(J_pos, qdot)
 
 
-    f_expl = ca.vertcat(qdot, qddot) # 状态的导数
+    f_expl = ca.vertcat(qdot, qddot, pdot) # 状态的导数
     f_impl = xdot_sym - f_expl # 隐式方程
 
     
@@ -66,6 +71,6 @@ def export_franka_ode_model():
     model.p = []
     model.f_expl_expr = f_expl
     model.f_impl_expr = f_impl
-    model.cost_y_expr = ca.vertcat(x_sym, u_sym)
-    model.cost_y_expr_e = x_sym
+    model.cost_y_expr = ca.vertcat(x_sym[0:7], u_sym) # 目标位置 + 力矩
+    model.cost_y_expr_e = x_sym[0:7]
     return model

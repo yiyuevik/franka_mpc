@@ -16,10 +16,10 @@ from scipy.io import savemat
 def main():
     
     # 1) 生成初始状态样本
-    x0 = np.array([ 0,0,0,0,0,0,0 , 0, 0, 0, 0, 0, 0, 0]) # 初始状态
+    x0 = np.array([ 0,0,0,0,0,0,0 , 0, 0, 0, 0, 0, 0,0,   0.088, -7.14902e-13, 0.926]) # 初始状态
     # 2) 闭环仿真
     ## 参数设置
-    N_sim = 250  # 模拟步数
+    N_sim = 520  # 模拟步数
     sim_round = 1
     all_simX = np.zeros((N_sim+1,config.Num_State,sim_round))
     all_simU = np.zeros((N_sim,config.Num_Input,sim_round))
@@ -40,7 +40,8 @@ def main():
         endtime = time.time()
         # print(config.compute_cost(simX, simU))
         elapsed_time = endtime - starttime
-
+        print("round:", i, "u", simU)
+        print("x", simX)
         if success:
             all_simX[:, :, i] = simX
             all_simU[:, :, i] = simU
@@ -53,6 +54,32 @@ def main():
             all_simX[:, :, i] = all_simX[:, :, 0]
             all_simU[:, :, i] = all_simU[:, :, 0]
             all_time[i] = 0
+
+        
+    pos = simX[:, 14:17]
+    joint = simX[:, :7]
+    u = simU
+
+    fig, axs = plt.subplots(3, 1, figsize=(10, 8), sharex=True)
+
+    axs[0].plot(pos)
+    axs[0].set_ylabel("End-Effector Position (m)")
+    axs[0].legend(["x", "y", "z"])
+    axs[0].grid()
+
+    axs[1].plot(u)
+    axs[1].set_ylabel("Joint Torque (Nm)")
+    axs[1].legend([f"τ{i+1}" for i in range(7)])
+    axs[1].grid()
+
+    axs[2].plot(joint)
+    axs[2].set_ylabel("Joint Position (rad)")
+    axs[2].set_xlabel("Time step")
+    axs[2].legend([f"q{i+1}" for i in range(7)])
+    axs[2].grid()
+
+    plt.tight_layout()
+    plt.show()
 
     print("all_time: ", np.sum(all_time))
     print("time/turn: ", np.sum(all_time)/(N_sim*(sim_round)))
