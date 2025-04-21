@@ -34,9 +34,10 @@ def export_franka_ode_model():
     xdot_sym = ca.SX.sym('xdot', nx) # [qdot(7), qddot(7), p(3)]
 
     
-    q     = x_sym[:nq] # 关节角度
-    qdot  = x_sym[nq:nq+nv]  # 关节角速度
-    p  = x_sym[14:17]
+    q     = x_sym[:7] # 关节角度
+    qdot  = x_sym[7:14]  # 关节角速度
+    p  = x_sym[14:17]   # 末端位置
+    pdot  = x_sym[17:20]    # 末端速度
     tau   = u_sym   # 关节力矩
 
     root = config.root
@@ -56,21 +57,23 @@ def export_franka_ode_model():
     p_expr  = T_fk_expr[:3, 3]          # 末端位置 p(q)
     J_pos = ca.jacobian(p_expr, q) 
     pdot = ca.mtimes(J_pos, qdot)
+    J_dot_q = ca.jacobian(pdot, q)
+    pddot = ca.mtimes(J_pos, qddot) + ca.mtimes(J_dot_q, qdot)
 
 
-    f_expl = ca.vertcat(qdot, qddot, pdot) # 状态的导数
+    f_expl = ca.vertcat(qdot, qddot, pdot, pddot) # 状态的导数
     f_impl = xdot_sym - f_expl # 隐式方程
 
     
     # 封装到 AcadosModel
     model = AcadosModel()
-    model.name = 'franka_7dof'
+    model.name = 'franka_20dof'
     model.x = x_sym
     model.xdot = xdot_sym
     model.u = u_sym
     model.p = []
     model.f_expl_expr = f_expl
     model.f_impl_expr = f_impl
-    model.cost_y_expr = ca.vertcat(x_sym[0:7], u_sym) # 目标位置 + 力矩
-    model.cost_y_expr_e = x_sym[0:7]
+    model.cost_y_expr = ca.vertcat(x_sym, u_sym) # 目标位置 + 力矩
+    model.cost_y_expr_e = x_sym
     return model

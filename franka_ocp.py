@@ -47,7 +47,7 @@ def create_ocp_solver(x0):
 
     # 成本函数设置
     p_target = np.array([0.5, 0.3, 0.5, -1.5, -0.0,  0.2,
-  0. ])  # 你可以自定义目标位置
+  0. ,0,0,0,0,0,0,0, 0.273241, 0.356944, 0.532517,0,0,0])  # 你可以自定义目标位置
     u_target = np.array([0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0])  # 控制输入目标
     ocp.cost.cost_type = 'NONLINEAR_LS'
     ocp.model.cost_y_expr = model.cost_y_expr
@@ -61,7 +61,7 @@ def create_ocp_solver(x0):
     ocp.model.cost_y_expr_e = model.cost_y_expr_e
     ocp.cost.W_e = config.P
     ocp.cost.yref_e = p_target
-    ocp.dims.ny_e = 7
+    ocp.dims.ny_e = 20
     
     # 约束条件
 

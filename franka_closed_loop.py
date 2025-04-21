@@ -16,10 +16,10 @@ from scipy.io import savemat
 def main():
     
     # 1) 生成初始状态样本
-    x0 = np.array([ 0,0,0,0,0,0,0 , 0, 0, 0, 0, 0, 0,0,   0.088, -7.14902e-13, 0.926]) # 初始状态
+    x0 = np.array([ 0,0,0,0,0,0,0 , 0, 0, 0, 0, 0, 0,0,   0.088, -7.14902e-13, 0.926,0,0,0]) # 初始状态
     # 2) 闭环仿真
     ## 参数设置
-    N_sim = 520  # 模拟步数
+    N_sim = 50  # 模拟步数
     sim_round = 1
     all_simX = np.zeros((N_sim+1,config.Num_State,sim_round))
     all_simU = np.zeros((N_sim,config.Num_Input,sim_round))
