@@ -5,29 +5,28 @@ config.py
 以及初始状态采样与随机初始猜测生成函数等。
 """
 import  numpy as np
+from scipy.linalg import block_diag
 
-Horizon = 256          # 预测步数
-Ts = 0.001             # 采样时间
+Horizon = 128          # 预测步数
+Ts = 0.005             # 采样时间
 Num_State = 20         #  状态维数（位置 + 速度）
 Num_Q = 7         # 关节数目
 Num_Velocity = 7         # 关节速度维数
-Num_P = 3         # 末端执行器位置维数
 Num_Input = 7         # 控制量维数（推力）
 gravity = [0, 0, -9.81] # 重力加速度
 root = "panda_link0"
 tip = "panda_link8"
-tau_max = 10000.0 # 最大关节力矩
+tau_max = 100.0 # 最大关节力矩
 
 # 状态和控制量的权重矩阵
-Q= np.eye(20)*0.01 #把前 7 个状态(关节角度)的对角权重调成 10
-idx = np.arange(7)
-Q[idx,idx]= 10.0
-idx = np.arange(14,17)
-Q[idx,idx]= 100.0
+Q_q = np.eye(7) * 1
 
-R = np.eye(7) * 0.5    
+Q_p= np.eye(3)*10 #把前 7 个状态(关节角度)的对角权重调成 10
+Q = block_diag(Q_q, Q_p)
 
-P = Q
+R = np.eye(7) * 0.5
+
+P = Q_p
 
 def GenerateRandomInitialGuess(sim_round = 0, min_random=-6000.0, max_random=6000.0):
     """
