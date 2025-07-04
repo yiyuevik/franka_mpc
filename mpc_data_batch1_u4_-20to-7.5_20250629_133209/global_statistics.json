@@ -1,0 +1,26 @@
+{
+  "total_successful": 103,
+  "total_failed": 1631,
+  "total_processed": 1734,
+  "total_solve_time": 4287.709434747696,
+  "batch_files": [
+    "batch_0001",
+    "batch_0002",
+    "batch_0003",
+    "batch_0004",
+    "batch_0005",
+    "batch_0006",
+    "batch_0007",
+    "batch_0008",
+    "batch_0009"
+  ],
+  "timestamp": "20250629_133209",
+  "batch_id": 1,
+  "u4_range": [
+    -20,
+    -7.5
+  ],
+  "collection_completed": true,
+  "total_duration": 11538.429826974869,
+  "average_solve_time": 41.628246939298016
+}

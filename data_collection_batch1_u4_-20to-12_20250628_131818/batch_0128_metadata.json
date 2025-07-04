@@ -1,0 +1,8 @@
+{
+  "batch_number": 128,
+  "processed_count": 6400,
+  "successful_count": 5,
+  "failed_count": 45,
+  "N_sim": 400,
+  "timestamp": "2025-06-29T01:59:58.393617"
+}
