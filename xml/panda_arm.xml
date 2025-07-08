@@ -1,124 +1,99 @@
+<?xml version="1.0"?>
 <mujoco model="panda">
-  <default>
-    <default class="robot">
-      <default class="motor">
-        <joint />
-        <motor />
-      </default>
-      <default class="visual">
-        <geom material="visualgeom" contype="0" conaffinity="0" group="2" />
-      </default>
-      <default class="collision">
-        <geom material="collision_material" condim="3" contype="0" conaffinity="1" priority="1" group="1" solref="0.005 1" friction="1 0.01 0.01" />
-        <equality solimp="0.99 0.999 1e-05" solref="0.005 1" />
-      </default>
-    </default>
-  </default>
+    <compiler angle="radian" inertiafromgeom="false"/>
+    <option timestep="0.001" gravity="0 0 -9.81" integrator="RK4"/>
 
-  <compiler angle="radian" />
+    <worldbody>
+        <body name="panda_link0" pos="0 0 0">
+            <geom type="box" size="0.001 0.001 0.001" rgba="0 0 0 0"/>
 
-  <asset>
-    <material name="default_material" rgba="0.7 0.7 0.7 1" />
-    <material name="collision_material" rgba="1.0 0.28 0.1 0.9" />
-    <mesh name="link0.stl" file="meshes/collision/link0.stl" />
-    <mesh name="link0.dae" file="meshes/visual/link0.dae" />
-    <mesh name="link1.stl" file="meshes/collision/link1.stl" />
-    <mesh name="link1.dae" file="meshes/visual/link1.dae" />
-    <mesh name="link2.stl" file="meshes/collision/link2.stl" />
-    <mesh name="link2.dae" file="meshes/visual/link2.dae" />
-    <mesh name="link3.stl" file="meshes/collision/link3.stl" />
-    <mesh name="link3.dae" file="meshes/visual/link3.dae" />
-    <mesh name="link4.stl" file="meshes/collision/link4.stl" />
-    <mesh name="link4.dae" file="meshes/visual/link4.dae" />
-    <mesh name="link5.stl" file="meshes/collision/link5.stl" />
-    <mesh name="link5.dae" file="meshes/visual/link5.dae" />
-    <mesh name="link6.stl" file="meshes/collision/link6.stl" />
-    <mesh name="link6.dae" file="meshes/visual/link6.dae" />
-    <mesh name="link7.stl" file="meshes/collision/link7.stl" />
-    <mesh name="link7.dae" file="meshes/visual/link7.dae" />
-  </asset>
+            <!-- panda_link1 / panda_joint1 -->
+            <body name="panda_link1" pos="0 0 0.333">
+                <inertial pos="0.003875 0.002081 -0.1750"
+                          fullinertia="0.70337 0.70661 0.009117 -0.000139 0.006772 0.019169"
+                          mass="4.970684"/>
+                <geom type="box" size="0.02 0.02 0.02"/>
+                <joint name="panda_joint1" type="hinge" axis="0 0 1"
+                       range="-2.8973 2.8973" damping="0" frictionloss="0"/>
 
-  <worldbody>
-    <body name="panda_link0" pos="0.00000000 0.00000000 0.00000000" quat="1 0 0 0" childclass="robot">
-      <freejoint name="floating_base" />
-      <geom name="panda_link0_collision" pos="0 0 0" quat="1 0 0 0" type="mesh" mesh="link0.stl" class="collision" />
-      <geom name="panda_link0_visual" pos="0 0 0" quat="1 0 0 0" material="default_material" type="mesh" mesh="link0.dae" class="visual" />
-      <body name="panda_link1" pos="0 0 0.333" quat="1.0 0.0 0.0 0.0">
-        <joint name="panda_joint1" type="hinge" ref="0.0" class="motor" range="-2.8973 2.8973" axis="0 0 1" />
-        <inertial pos="3.875e-03 2.081e-03 -0.1750" quat="1.0 0.0 0.0 0.0" mass="4.970684" diaginertia="0.70337 0.70661 0.009117" />
-        <geom name="panda_link1_collision" pos="0 0 0" quat="1 0 0 0" type="mesh" mesh="link1.stl" class="collision" />
-        <geom name="panda_link1_visual" pos="0 0 0" quat="1 0 0 0" material="default_material" type="mesh" mesh="link1.dae" class="visual" />
-        <body name="panda_link2" pos="0 0 0" quat="0.7071067811882787 -0.7071067811848163 0.0 0.0">
-          <joint name="panda_joint2" type="hinge" ref="0.0" class="motor" range="-1.7628 1.7628" axis="0 0 1" />
-          <inertial pos="-3.141e-03 -2.872e-02 3.495e-03" quat="1.0 0.0 0.0 0.0" mass="0.646926" diaginertia="0.007962 0.02811 0.025995" />
-          <geom name="panda_link2_collision" pos="0 0 0" quat="1 0 0 0" type="mesh" mesh="link2.stl" class="collision" />
-          <geom name="panda_link2_visual" pos="0 0 0" quat="1 0 0 0" material="default_material" type="mesh" mesh="link2.dae" class="visual" />
-          <body name="panda_link3" pos="0 -0.316 0" quat="0.7071067811882787 0.7071067811848163 0.0 0.0">
-            <joint name="panda_joint3" type="hinge" ref="0.0" class="motor" range="-2.8973 2.8973" axis="0 0 1" />
-            <inertial pos="2.7518e-02 3.9252e-02 -6.6502e-02" quat="1.0 0.0 0.0 0.0" mass="3.228604" diaginertia="0.037242 0.036155 0.01083" />
-            <geom name="panda_link3_collision" pos="0 0 0" quat="1 0 0 0" type="mesh" mesh="link3.stl" class="collision" />
-            <geom name="panda_link3_visual" pos="0 0 0" quat="1 0 0 0" material="default_material" type="mesh" mesh="link3.dae" class="visual" />
-            <body name="panda_link4" pos="0.0825 0 0" quat="0.7071067811882787 0.7071067811848163 0.0 0.0">
-              <joint name="panda_joint4" type="hinge" ref="0.0" class="motor" range="-3.0718 -0.0698" axis="0 0 1" />
-              <inertial pos="-5.317e-02 1.04419e-01 2.7454e-02" quat="1.0 0.0 0.0 0.0" mass="3.587895" diaginertia="0.025853 0.019552 0.028323" />
-              <geom name="panda_link4_collision" pos="0 0 0" quat="1 0 0 0" type="mesh" mesh="link4.stl" class="collision" />
-              <geom name="panda_link4_visual" pos="0 0 0" quat="1 0 0 0" material="default_material" type="mesh" mesh="link4.dae" class="visual" />
-              <body name="panda_link5" pos="-0.0825 0.384 0" quat="0.7071067811882787 -0.7071067811848163 0.0 0.0">
-                <joint name="panda_joint5" type="hinge" ref="0.0" class="motor" range="-2.8973 2.8973" axis="0 0 1" />
-                <inertial pos="-1.1953e-02 4.1065e-02 -3.8437e-02" quat="1.0 0.0 0.0 0.0" mass="1.225946" diaginertia="0.035549 0.029474 0.008627" />
-                <geom name="panda_link5_collision" pos="0 0 0" quat="1 0 0 0" type="mesh" mesh="link5.stl" class="collision" />
-                <geom name="panda_link5_visual" pos="0 0 0" quat="1 0 0 0" material="default_material" type="mesh" mesh="link5.dae" class="visual" />
-                <body name="panda_link6" pos="0 0 0" quat="0.7071067811882787 0.7071067811848163 0.0 0.0">
-                  <joint name="panda_joint6" type="hinge" ref="0.0" class="motor" range="-0.0175 3.7525" axis="0 0 1" />
-                  <inertial pos="6.0149e-02 -1.4117e-02 -1.0517e-02" quat="1.0 0.0 0.0 0.0" mass="1.666555" diaginertia="0.001964 0.004354 0.005433" />
-                  <geom name="panda_link6_collision" pos="0 0 0" quat="1 0 0 0" type="mesh" mesh="link6.stl" class="collision" />
-                  <geom name="panda_link6_visual" pos="0 0 0" quat="1 0 0 0" material="default_material" type="mesh" mesh="link6.dae" class="visual" />
-                  <body name="panda_link7" pos="0.088 0 0" quat="0.7071067811882787 0.7071067811848163 0.0 0.0">
-                    <joint name="panda_joint7" type="hinge" ref="0.0" class="motor" range="-2.8973 2.8973" axis="0 0 1" />
-                    <inertial pos="1.0517e-02 -4.252e-03 6.1597e-02" quat="1.0 0.0 0.0 0.0" mass="7.35522e-01" diaginertia="0.012516 0.010027 0.004815" />
-                    <geom name="panda_link7_collision" pos="0 0 0" quat="1 0 0 0" type="mesh" mesh="link7.stl" class="collision" />
-                    <geom name="panda_link7_visual" pos="0 0 0" quat="1 0 0 0" material="default_material" type="mesh" mesh="link7.dae" class="visual" />
-                    <body name="panda_link8" pos="0 0 0.107" quat="1.0 0.0 0.0 0.0">
-                      <inertial pos="0 0 0" quat="1.0 0.0 0.0 0.0" mass="0.0" diaginertia="0.001 0.001 0.001" />
+                <!-- panda_link2 / panda_joint2 -->
+                <body name="panda_link2" pos="0 0 0" quat="0.70710678 -0.70710678 0 0">
+                    <inertial pos="-0.003141 -0.02872 0.003495"
+                              fullinertia="0.007962 0.02811 0.025995 -0.003925 0.010254 0.000704"
+                              mass="0.646926"/>
+                    <geom type="box" size="0.02 0.02 0.02"/>
+                    <joint name="panda_joint2" type="hinge" axis="0 0 1"
+                           range="-1.7628 1.7628" damping="0" frictionloss="0"/>
+
+                    <!-- panda_link3 / panda_joint3 -->
+                    <body name="panda_link3" pos="0 -0.316 0" quat="0.70710678 0.70710678 0 0">
+                        <inertial pos="0.027518 0.039252 -0.066502"
+                                  fullinertia="0.037242 0.036155 0.01083 -0.004761 -0.011396 -0.012805"
+                                  mass="3.228604"/>
+                        <geom type="box" size="0.02 0.02 0.02"/>
+                        <joint name="panda_joint3" type="hinge" axis="0 0 1"
+                               range="-2.8973 2.8973" damping="0" frictionloss="0"/>
+
+                        <!-- panda_link4 / panda_joint4 -->
+                        <body name="panda_link4" pos="0.0825 0 0" quat="0.70710678 0.70710678 0 0">
+                            <inertial pos="-0.05317 0.104419 0.027454"
+                                      fullinertia="0.025853 0.019552 0.028323 0.007796 -0.001332 0.008641"
+                                      mass="3.587895"/>
+                            <geom type="box" size="0.02 0.02 0.02"/>
+                            <joint name="panda_joint4" type="hinge" axis="0 0 1"
+                                   range="-3.0718 2.0698" damping="0" frictionloss="0"/>
+
+                            <!-- panda_link5 / panda_joint5 -->
+                            <body name="panda_link5" pos="-0.0825 0.384 0" quat="0.70710678 -0.70710678 0 0">
+                                <inertial pos="-0.011953 0.041065 -0.038437"
+                                          fullinertia="0.035549 0.029474 0.008627 -0.002117 -0.004037 0.000229"
+                                          mass="1.225946"/>
+                                <geom type="box" size="0.02 0.02 0.02"/>
+                                <joint name="panda_joint5" type="hinge" axis="0 0 1"
+                                       range="-2.8973 2.8973" damping="0" frictionloss="0"/>
+
+                                <!-- panda_link6 / panda_joint6 -->
+                                <body name="panda_link6" pos="0 0 0" quat="0.70710678 0.70710678 0 0">
+                                    <inertial pos="0.060149 -0.014117 -0.010517"
+                                              fullinertia="0.001964 0.004354 0.005433 0.000109 -0.001158 0.000341"
+                                              mass="1.666555"/>
+                                    <geom type="box" size="0.02 0.02 0.02"/>
+                                    <joint name="panda_joint6" type="hinge" axis="0 0 1"
+                                           range="-0.0175 3.7525" damping="0" frictionloss="0"/>
+
+                                    <!-- panda_link7 / panda_joint7 -->
+                                    <body name="panda_link7" pos="0.088 0 0" quat="0.70710678 0.70710678 0 0">
+                                        <inertial pos="0.010517 -0.004252 0.061597"
+                                                  fullinertia="0.012516 0.010027 0.004815 -0.000428 -0.001196 -0.000741"
+                                                  mass="0.735522"/>
+                                        <geom type="box" size="0.02 0.02 0.02"/>
+                                        <joint name="panda_joint7" type="hinge" axis="0 0 1"
+                                               range="-2.8973 2.8973" damping="0" frictionloss="0"/>
+
+                                        <!-- panda_link8：固定在 link7 上，无 joint -->
+                                        <body name="panda_link8" pos="0 0 0.107">
+                                            <inertial pos="0 0 0"
+                                                      fullinertia="0.001 0.001 0.001 0 0 0"
+                                                      mass="0"/>
+                                            <geom type="box" size="0.005 0.005 0.005"/>
+                                        </body>
+                                    </body>
+                                </body>
+                            </body>
+                        </body>
                     </body>
-                  </body>
                 </body>
-              </body>
             </body>
-          </body>
         </body>
-      </body>
-      <site name="panda_link0_site" pos="0 0 0" quat="1 0 0 0" />
-      <camera name="front_camera" mode="track" fovy="90.0" quat="4.329780281177467e-17 4.329780281177466e-17 0.7071067811865475 0.7071067811865476" pos="0.0 2.0 0.5" />
-      <camera name="side_camera" mode="track" fovy="90.0" quat="-0.5 -0.4999999999999999 0.5 0.5000000000000001" pos="-2.0 0.0 0.5" />
-    </body>
-  </worldbody>
+    </worldbody>
 
-  <actuator>
-    <motor name="panda_joint1_ctrl" joint="panda_joint1" class="motor" />
-    <motor name="panda_joint2_ctrl" joint="panda_joint2" class="motor" />
-    <motor name="panda_joint3_ctrl" joint="panda_joint3" class="motor" />
-    <motor name="panda_joint4_ctrl" joint="panda_joint4" class="motor" />
-    <motor name="panda_joint5_ctrl" joint="panda_joint5" class="motor" />
-    <motor name="panda_joint6_ctrl" joint="panda_joint6" class="motor" />
-    <motor name="panda_joint7_ctrl" joint="panda_joint7" class="motor" />
-  </actuator>
-
-  <contact>
-    <exclude body1="panda_link0" body2="panda_link1" />
-    <exclude body1="panda_link1" body2="panda_link2" />
-    <exclude body1="panda_link2" body2="panda_link3" />
-    <exclude body1="panda_link3" body2="panda_link4" />
-    <exclude body1="panda_link4" body2="panda_link5" />
-    <exclude body1="panda_link5" body2="panda_link6" />
-    <exclude body1="panda_link6" body2="panda_link7" />
-  </contact>
-
-  <sensor>
-    <framepos name="panda_link0_site_pos" objtype="site" objname="panda_link0_site" />
-    <framequat name="panda_link0_site_quat" objtype="site" objname="panda_link0_site" />
-    <framelinvel name="panda_link0_site_linvel" objtype="site" objname="panda_link0_site" />
-    <frameangvel name="panda_link0_site_angvel" objtype="site" objname="panda_link0_site" />
-    <velocimeter name="panda_link0_site_vel" site="panda_link0_site" />
-  </sensor>
+    <actuator>
+        <general joint="panda_joint1" gear="1" biasprm="0 0 0"/>
+        <general joint="panda_joint2" gear="1" biasprm="0 0 0"/>
+        <general joint="panda_joint3" gear="1" biasprm="0 0 0"/>
+        <general joint="panda_joint4" gear="1" biasprm="0 0 0"/>
+        <general joint="panda_joint5" gear="1" biasprm="0 0 0"/>
+        <general joint="panda_joint6" gear="1" biasprm="0 0 0"/>
+        <general joint="panda_joint7" gear="1" biasprm="0 0 0"/>
+    </actuator>
 </mujoco>

@@ -1,0 +1,42 @@
+# MPC configuration parameters
+Horizon: 128                # Prediction horizon (number of time steps)
+Ts: 0.01                    # Sampling time step in seconds
+
+# State and input dimensions
+Num_State: 14               # State dimension (7 joint angles + 7 joint velocities)
+Num_Q: 7                    # Number of joints (position variables)
+Num_Velocity: 7             # Number of joint velocity variables
+Num_P: 3                    # End-effector position output dimension
+Num_Input: 7                # Control input dimension (number of joint torques)
+
+# Physical constants and robot model parameters
+gravity: [0.0, 0.0, -9.81]  # Gravity acceleration (m/s^2)
+root: "panda_link0"         # URDF root link name for the robot
+tip: "panda_link8"          # URDF end-effector link name for the robot
+tau_max: 100.0              # Maximum joint torque (for constraints, not enforced by default)
+
+# Cost function weight matrices
+Q:                          # Weight matrix for end-effector position error (3x3)
+  - [1000.0,    0.0,    0.0]
+  - [   0.0, 1000.0,    0.0]
+  - [   0.0,    0.0, 1000.0]
+R:                          # Weight matrix for control effort (7x7)
+  - [0.01, 0.0,  0.0,  0.0,  0.0,  0.0,  0.0]
+  - [0.0,  0.01, 0.0,  0.0,  0.0,  0.0,  0.0]
+  - [0.0,  0.0,  0.01, 0.0,  0.0,  0.0,  0.0]
+  - [0.0,  0.0,  0.0,  0.01, 0.0,  0.0,  0.0]
+  - [0.0,  0.0,  0.0,  0.0,  0.01, 0.0,  0.0]
+  - [0.0,  0.0,  0.0,  0.0,  0.0,  0.01, 0.0]
+  - [0.0,  0.0,  0.0,  0.0,  0.0,  0.0,  0.01]
+P:                          # Terminal cost weight matrix (same size as Q, often equal to Q)
+  - [1000.0,    0.0,    0.0]
+  - [   0.0, 1000.0,    0.0]
+  - [   0.0,    0.0, 1000.0]
+
+# Initial guess parameters for MPC (randomization range for select joints)
+initial_guess_min: -20.0    # Minimum random torque for initial guess (Nm)
+initial_guess_max: 20.0     # Maximum random torque for initial guess (Nm)
+
+# Target references for cost (desired end-effector position and control)
+target_position: [0.3, 0.3, 0.5]              # Desired end-effector position (meters)
+target_torque: [0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0]  # Desired joint torques (all zeros)

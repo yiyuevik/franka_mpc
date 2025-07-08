@@ -29,6 +29,5 @@ sol = opti.solve()
 q_sol = sol.value(q_var)
 print("IK 解:", q_sol)
 
-q_var = np.array([0.85114759,  0.22895749, -0.00465471, -1.69075889, -0.24523397,  0.20150836,
-  0.     ])
+q_var = np.array([0, -0.25*np.pi, 0, -0.75*np.pi, 0, 0.5*np.pi, 0.25*np.pi])
 print(T_fk_fun(q_var)[:3, 3])
