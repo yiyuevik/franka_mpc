@@ -32,3 +32,12 @@ initial_guess_max = cfg.get("initial_guess_max", 20.0)
 # Target references for cost (desired end-effector position and target joint torques)
 target_position = np.array(cfg.get("target_position", [0.3, 0.3, 0.5]))
 target_torque = np.array(cfg.get("target_torque", [0.0] * 7))
+
+# Initial guess grid
+U4_MIN = cfg.get("U4_MIN", -20.0)
+U4_MAX = cfg.get("U4_MAX", 20.0)
+U5_MIN = cfg.get("U5_MIN", -20.0)
+U5_MAX = cfg.get("U5_MAX", 20.0)
+U7_MIN = cfg.get("U7_MIN", -20.0)
+U7_MAX = cfg.get("U7_MAX", 20.0)
+STEP = cfg.get("STEP", 2.5)

@@ -40,3 +40,12 @@ initial_guess_max: 20.0     # Maximum random torque for initial guess (Nm)
 # Target references for cost (desired end-effector position and control)
 target_position: [0.3, 0.3, 0.5]              # Desired end-effector position (meters)
 target_torque: [0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0]  # Desired joint torques (all zeros)
+
+# Initial guess grid
+U4_MIN : -20
+U4_MAX : 20
+U5_MIN : -20
+U5_MAX : 20
+U7_MIN : -20
+U7_MAX : 20
+STEP : 2.5
