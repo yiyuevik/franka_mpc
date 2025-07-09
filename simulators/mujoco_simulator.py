@@ -4,7 +4,7 @@ import os
 import time
 
 import config
-from utils.helpers import clear_solver_state, get_guess_from_solver_result
+from utils.helpers import clear_solver_state, get_guess_from_solver_result, compute_end_effector_position
 
 class MuJoCoSimulator:
     """
@@ -79,26 +79,19 @@ class MuJoCoSimulator:
             print("Warning: manually computing end-effector position.")
             return self.data.xpos[-1].copy()
     
-    def compare_end_effector_pos(self, T_fk_fun):
+    def compare_end_effector_pos(self):
         """
         Compare MuJoCo's end-effector position with the position from the CasADi forward kinematics.
         Prints both positions and their difference.
         """
         mujoco_ee_pos = self.get_end_effector_pos()
         q_current = self.data.qpos[:7]
-        casadi_ee_pos = self.fk_position_casadi(T_fk_fun, q_current)
+        casadi_ee_pos = compute_end_effector_position(q_current)
         print(f"MuJoCo end-effector position: {mujoco_ee_pos}")
         print(f"CasADi end-effector position: {casadi_ee_pos}")
         print(f"Position difference: {np.linalg.norm(mujoco_ee_pos - casadi_ee_pos):.4f} m")
         return mujoco_ee_pos, casadi_ee_pos
     
-    def fk_position_casadi(self, T_fk_fun, q_row):
-        """
-        Compute end-effector position using the CasADi forward kinematics function given joint positions q_row.
-        """
-        T = T_fk_fun(q_row)
-        p = T[:3, 3]
-        return np.array(p).reshape(3)
 
 def simulate_closed_loop_mujoco(ocp, ocp_solver, mujoco_sim, x0, N_sim=50, nMaxGuess=1):
     """
@@ -112,11 +105,13 @@ def simulate_closed_loop_mujoco(ocp, ocp_solver, mujoco_sim, x0, N_sim=50, nMaxG
     simX = np.zeros((N_sim + 1, nx))
     simU = np.zeros((N_sim, nu))
     simCost = np.zeros((N_sim, 1))
+    pos = np.zeros((N_sim + 1, 3)) 
     simX[0, :] = x0
     
     # Reset the MuJoCo simulator to the initial state
     mujoco_sim.reset(q_init=x0[:7], qd_init=x0[7:])
-    
+    pos[0, :] = mujoco_sim.get_end_effector_pos()
+
     success = True
     for i in range(N_sim):
         retries = 0
@@ -137,6 +132,7 @@ def simulate_closed_loop_mujoco(ocp, ocp_solver, mujoco_sim, x0, N_sim=50, nMaxG
                 simU[i, :] = u_opt
                 simX[i+1, :] = mujoco_sim.step(u_opt)
                 simCost[i, :] = ocp_solver.get_cost()
+                pos[i+1, :] = mujoco_sim.get_end_effector_pos()
                 break
             except Exception as e:
                 success = False
@@ -156,4 +152,4 @@ def simulate_closed_loop_mujoco(ocp, ocp_solver, mujoco_sim, x0, N_sim=50, nMaxG
     # Clear solver to free memory
     clear_solver_state(ocp_solver, config.Horizon)
     t = np.linspace(0, N_sim * config.Ts, N_sim + 1)
-    return t, simX, simU, simCost, success
+    return t, simX, simU, simCost, success, pos

@@ -1,6 +1,9 @@
 import numpy as np
 import random
 import config
+import os
+_fk_function = None
+
 
 def clear_solver_state(ocp_solver, N_horizon):
     """
@@ -43,3 +46,39 @@ def generate_random_initial_guess(min_random=None, max_random=None):
     for j in random_indices:
         u_guess[j] = round(random.uniform(min_random, max_random), 2)
     return u_guess
+
+def generate_grid_initial_guesses(u4_min, u4_max, step=2.5):
+    u4_range = np.arange(u4_min, u4_max + step, step)
+    u5_range = np.arange(config.U5_MIN, config.U5_MAX + step, step)
+    u7_range = np.arange(config.U7_MIN, config.U7_MAX + step, step)
+    u4_grid, u5_grid, u7_grid = np.meshgrid(u4_range, u5_range, u7_range)
+    u4_flat = u4_grid.flatten()
+    u5_flat = u5_grid.flatten()
+    u7_flat = u7_grid.flatten()
+    all_guesses = []
+    for i in range(len(u4_flat)):
+        u_guess = np.array([0, 0, 0, u4_flat[i], u5_flat[i], 0, u7_flat[i]])
+        all_guesses.append(u_guess)
+    return np.array(all_guesses)
+
+def ensure_dir(path):
+    if not os.path.exists(path):
+        os.makedirs(path)
+
+def _initialize_forward_kinematics():
+    global _fk_function
+    if _fk_function is None:
+        import urdf2casadi.urdfparser as u2c
+        import os
+        franka = u2c.URDFparser()
+        path_to_franka = os.path.join(os.path.dirname(os.path.dirname(__file__)), 'urdf/panda_arm.urdf')
+        franka.from_file(path_to_franka)
+        fk_dict = franka.get_forward_kinematics(config.root, config.tip)
+        _fk_function = fk_dict["T_fk"]
+    return _fk_function
+
+def compute_end_effector_position(q):
+    T_fk_fun = _initialize_forward_kinematics()
+    T = T_fk_fun(q)
+    position = np.array(T[:3, 3]).flatten()
+    return position

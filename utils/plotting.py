@@ -52,7 +52,7 @@ def plot_trajectories(joint_positions, torques, end_effector_positions, target_p
     ax.legend()
     plt.tight_layout()
     plt.savefig("trajectory_3d.png")
-    plt.close(fig)
+    plt.show()
 
 def animate_trajectory(end_effector_positions, target_position=None, interval=50):
     """
