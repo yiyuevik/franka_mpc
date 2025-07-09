@@ -96,7 +96,7 @@ def main():
             buffer_fail['indexes'].append(i)
             buffer_fail['initial_guesses'].append(u_guess)
             fail_count += 1
-
+        ocp_solver.reset()
         # ----- Batch Save -----
         if USE_BATCH and ((i + 1) % BATCH_SIZE == 0 or (i + 1) == total_combinations):
             batch_id += 1
