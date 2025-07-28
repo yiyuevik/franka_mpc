@@ -48,4 +48,4 @@ U5_MIN : -20
 U5_MAX : 20
 U7_MIN : -20
 U7_MAX : 20
-STEP : 2.5
+STEP : 20

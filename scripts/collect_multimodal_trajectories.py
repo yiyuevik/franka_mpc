@@ -25,7 +25,7 @@ CLUSTER_POS_THRESHOLD = 0.05  # meters
 # Save end-effector trajectory, joint states, etc
 SAVE_POS_DIM = 3
 
-N_SIM = 400  # Simulation horizon
+N_SIM = 200  # Simulation horizon
 
 
 # ------------------------- Main Script -------------------------
