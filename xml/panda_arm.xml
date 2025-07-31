@@ -1,7 +1,7 @@
 <?xml version="1.0"?>
 <mujoco model="panda">
     <compiler angle="radian" inertiafromgeom="false"/>
-    <option timestep="0.001" gravity="0 0 -9.81" integrator="RK4"/>
+    <option timestep="0.001"/>
 
     <worldbody>
         <body name="panda_link0" pos="0 0 0">
@@ -88,12 +88,12 @@
     </worldbody>
 
     <actuator>
-        <general joint="panda_joint1" gear="1" biasprm="0 0 0"/>
-        <general joint="panda_joint2" gear="1" biasprm="0 0 0"/>
-        <general joint="panda_joint3" gear="1" biasprm="0 0 0"/>
-        <general joint="panda_joint4" gear="1" biasprm="0 0 0"/>
-        <general joint="panda_joint5" gear="1" biasprm="0 0 0"/>
-        <general joint="panda_joint6" gear="1" biasprm="0 0 0"/>
-        <general joint="panda_joint7" gear="1" biasprm="0 0 0"/>
+        <position joint="panda_joint1" ctrlrange="-2.8973 2.8973" kp="200" kv="20"/>
+        <position joint="panda_joint2" ctrlrange="-1.7628 1.7628" kp="200" kv="20"/>
+        <position joint="panda_joint3" ctrlrange="-2.8973 2.8973" kp="200" kv="20"/>
+        <position joint="panda_joint4" ctrlrange="-3.0718 0.0698" kp="200" kv="20"/>
+        <position joint="panda_joint5" ctrlrange="-2.8973 2.8973" kp="200" kv="20"/>
+        <position joint="panda_joint6" ctrlrange="-0.0175 3.7525" kp="200" kv="20"/>
+        <position joint="panda_joint7" ctrlrange="-2.8973 2.8973" kp="200" kv="20"/>
     </actuator>
 </mujoco>

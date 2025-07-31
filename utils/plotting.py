@@ -32,7 +32,8 @@ def plot_trajectories(joint_positions, torques, end_effector_positions, target_p
     axs[2].grid(True)
     plt.tight_layout()
     plt.savefig("trajectory.png")
-    plt.close(fig)
+    plt.show()
+    # plt.close(fig)
     
     # 3D trajectory plot for end-effector path
     fig = plt.figure(figsize=(8, 6))

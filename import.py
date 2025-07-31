@@ -1,6 +1,7 @@
 import casadi as ca
 import numpy as np
 import urdf2casadi.urdfparser as u2c
+import liecasadi as lc
 
 # 加载模型
 parser = u2c.URDFparser()
@@ -31,3 +32,6 @@ print("IK 解:", q_sol)
 
 q_var = np.array([0, -0.25*np.pi, 0, -0.75*np.pi, 0, 0.5*np.pi, 0.25*np.pi])
 print(T_fk_fun(q_var)[:3, 3])
+print(T_fk_fun(q_sol)[:3, :3])
+q_sol = lc.SO3(q_sol)
+print(q_sol.log())

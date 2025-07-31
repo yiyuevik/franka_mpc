@@ -6,7 +6,7 @@ import time
 
 import config
 from models.franka_model import export_franka_ode_model
-from utils.helpers import clear_solver_state, get_guess_from_solver_result
+from utils.helpers import clear_solver_state, get_guess_from_solver_result, compute_end_effector_position
 
 def create_ocp_solver(x0):
     """
@@ -16,8 +16,6 @@ def create_ocp_solver(x0):
     ocp = AcadosOcp()
     
     # Load parameters from config
-    Nx = config.Num_State
-    Nu = config.Num_Input
     N  = config.Horizon
     tf = N * config.Ts  # total time horizon length (seconds)
     
@@ -32,32 +30,76 @@ def create_ocp_solver(x0):
     ocp.model.u = model.u
     
     # Cost function setup (least-squares)
-    p_target = config.target_position
-    u_target = config.target_torque
+  
     ocp.cost.cost_type = "NONLINEAR_LS"
     ocp.model.cost_y_expr = model.cost_y_expr
-    ocp.cost.W = scipy.linalg.block_diag(config.Q, config.R)
-    ocp.cost.yref = np.concatenate((p_target, u_target))
+    ocp.cost.W = scipy.linalg.block_diag(config.Q_pos, config.Q_rot, config.R)
+    ocp.cost.yref = np.zeros(13)
     ocp.dims.ny = ocp.cost.yref.shape[0]
     
     # Terminal cost setup (least-squares)
     ocp.cost.cost_type_e = "NONLINEAR_LS"
     ocp.model.cost_y_expr_e = model.cost_y_expr_e
-    ocp.cost.W_e = config.P
-    ocp.cost.yref_e = p_target
+    ocp.cost.W_e = scipy.linalg.block_diag(config.Q_pos, config.Q_rot)
+    ocp.cost.yref_e = np.zeros(6)  
     ocp.dims.ny_e = ocp.cost.yref_e.shape[0]
     
     # Constraints: initial state is fixed to x0. 
     ocp.constraints.x0 = x0
+    ocp.parameter_values = np.array([0.3, 0.3, 0.5, 5.13931, 1.38247, -0.0281056])
+ 
+    q_min = np.array([
+        -2.8973,
+        -1.7628,
+        -2.8973,
+        -3.0718,
+        -2.8973,
+        -0.0175,
+        -2.8973
+    ])
+    q_max = np.array([
+        2.8973,
+        1.7628,
+        2.8973,
+        -0.0698,
+        2.8973,
+        3.7525,
+        2.8973
+    ])
+    ocp.constraints.idxbx = np.arange(7)
+    ocp.constraints.lbx = q_min
+    ocp.constraints.ubx = q_max
+
+    tau_min = np.array([
+        -2.618,
+        -2.618,
+        -2.618,
+        -2.618,
+        -3.142,
+        -3.142,
+        -3.142
+    ])
+    tau_max = np.array([
+        2.618,
+        2.618,
+        2.618,
+        2.618,
+        3.142,
+        3.142,
+        3.142
+    ])
+    ocp.constraints.idxbu = np.arange(7)
+    ocp.constraints.lbu = tau_min
+    ocp.constraints.ubu = tau_max
     
     # Solver settings
-    ocp.solver_options.qp_solver = "FULL_CONDENSING_QPOASES"
+    ocp.solver_options.qp_solver = "FULL_CONDENSING_HPIPM"
     ocp.solver_options.hessian_approx = "GAUSS_NEWTON"
     ocp.solver_options.integrator_type = "IRK"
     ocp.solver_options.nlp_solver_type = "SQP_RTI"
     ocp.solver_options.nlp_solver_max_iter = 150
-    ocp.solver_options.nlp_solver_tol_stat = 5e-3
-    ocp.solver_options.levenberg_marquardt = 1.0
+    ocp.solver_options.nlp_solver_tol_stat = 5e-4
+    # ocp.solver_options.levenberg_marquardt = 1.0
     
     # Create ACADOS solver and integrator
     # True for generate, build, and compile the C code
@@ -77,10 +119,11 @@ def simulate_closed_loop(ocp, ocp_solver, integrator, x0, N_sim=50, nMaxGuess=1)
     
     # Initialize storage for simulation data
     simX = np.zeros((N_sim + 1, nx))
+    pos = np.zeros((N_sim + 1, 3))
     simU = np.zeros((N_sim, nu))
     simCost = np.zeros((N_sim, 1))
     simX[0, :] = x0  # set initial state
-    
+    pos[0, :] = compute_end_effector_position(x0)
     success = True
     # Closed-loop simulation
     for i in range(N_sim):
@@ -102,6 +145,7 @@ def simulate_closed_loop(ocp, ocp_solver, integrator, x0, N_sim=50, nMaxGuess=1)
                 simU[i, :] = u_opt
                 x_next = integrator.simulate(x=simX[i, :], u=u_opt)
                 simX[i+1, :] = x_next
+                pos[i+1, :] = compute_end_effector_position(x_next)
                 simCost[i, :] = ocp_solver.get_cost()
                 break  # success, exit retry loop
             except Exception as e:
@@ -124,4 +168,4 @@ def simulate_closed_loop(ocp, ocp_solver, integrator, x0, N_sim=50, nMaxGuess=1)
     clear_solver_state(ocp_solver, config.Horizon)
     # Time vector for each sample
     t = np.linspace(0, N_sim * config.Ts, N_sim + 1)
-    return t, simX, simU, simCost, success
+    return t, simX, simU, simCost, success, pos 

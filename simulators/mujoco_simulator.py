@@ -13,13 +13,12 @@ class MuJoCoSimulator:
     def __init__(self, xml_path=None):
         # Load the MuJoCo model (MJCF XML)
         if xml_path is None:
-            xml_path = os.path.join(os.path.dirname(os.path.dirname(__file__)), "xml","panda_arm.xml")
+            xml_path = os.path.join(os.path.dirname(os.path.dirname(__file__)), "xml","panda_arm_modified.xml")
         self.model = mujoco.MjModel.from_xml_path(xml_path)
         self.data = mujoco.MjData(self.model)
         # Print diagnostic info about the model
         print("dof_damping =", self.model.dof_damping)        # expected to be all zeros (no damping)
         print("dof_frictionloss =", self.model.dof_frictionloss)
-        self.model.opt.integrator = mujoco.mjtIntegrator.mjINT_RK4
         self.n_joints = self.model.nv       # number of joints (DOF)
         self.n_actuators = self.model.nu    # number of actuators
         print("MuJoCo model loaded successfully:")
@@ -49,15 +48,30 @@ class MuJoCoSimulator:
         Returns the next state (concatenated joint positions and velocities).
         """
         # Apply control torques
-        self.data.qfrc_applied[:len(u)] = u
-        mujoco.mj_forward(self.model, self.data)  # update internal state with applied forces
+        # data = np.zeros((self.substeps,7))
+        current_q = self.data.qpos[:7].copy()  # current joint positions
+        target_q = current_q + u * self.dt  # target joint positions based on control input
+        self.data.ctrl[:len(u)] = target_q
         # Advance the simulation for the duration of one MPC time step
         for _ in range(self.substeps):
             mujoco.mj_step(self.model, self.data)
+            # data[i, :] = self.data.qpos[:7].copy()
+
+        # # plot the data with matplotlib, and show each target_q value as a separate dashed line
+        # import matplotlib.pyplot as plt
+        # plt.plot(data.T)
+        # for j in range(len(target_q)):
+        #     plt.axhline(target_q[j], linestyle='--', color=f"C{j}", label=f"Target q{j+1}")
+        # plt.xlabel("Time Step")
+        # plt.ylabel("Joint Position")
+        # plt.title("Joint Position Over Time")
+        # plt.legend()
+        # plt.show()
+
         # Retrieve resulting state
         q = self.data.qpos[:7].copy()
-        qd = self.data.qvel[:7].copy()
-        return np.concatenate([q, qd])
+        # qd = self.data.qvel[:7].copy()
+        return q
     
     def get_state(self):
         """
@@ -98,18 +112,19 @@ def simulate_closed_loop_mujoco(ocp, ocp_solver, mujoco_sim, x0, N_sim=50, nMaxG
     Simulate closed-loop control using the MuJoCo simulator for physics.
     Returns (t, simX, simU, simCost, success).
     """
-    nx = ocp.model.x.size()[0]  # e.g., 14
-    nu = ocp.model.u.size()[0]  # e.g., 7
+    nx = ocp.model.x.size()[0]  
+    nu = ocp.model.u.size()[0]  
     
     # Initialize storage for trajectory data
     simX = np.zeros((N_sim + 1, nx))
+    # simX_mj = np.zeros(((N_sim + 1)* 10, nx))
     simU = np.zeros((N_sim, nu))
     simCost = np.zeros((N_sim, 1))
     pos = np.zeros((N_sim + 1, 3)) 
     simX[0, :] = x0
     
     # Reset the MuJoCo simulator to the initial state
-    mujoco_sim.reset(q_init=x0[:7], qd_init=x0[7:])
+    mujoco_sim.reset(q_init=x0, qd_init=np.zeros(7))
     pos[0, :] = mujoco_sim.get_end_effector_pos()
 
     success = True
@@ -131,6 +146,7 @@ def simulate_closed_loop_mujoco(ocp, ocp_solver, mujoco_sim, x0, N_sim=50, nMaxG
                 # Apply control and simulate one step in MuJoCo
                 simU[i, :] = u_opt
                 simX[i+1, :] = mujoco_sim.step(u_opt)
+                # simX_mj[i * 10:(i + 1) * 10, :] = data
                 simCost[i, :] = ocp_solver.get_cost()
                 pos[i+1, :] = mujoco_sim.get_end_effector_pos()
                 break
@@ -152,4 +168,4 @@ def simulate_closed_loop_mujoco(ocp, ocp_solver, mujoco_sim, x0, N_sim=50, nMaxG
     # Clear solver to free memory
     clear_solver_state(ocp_solver, config.Horizon)
     t = np.linspace(0, N_sim * config.Ts, N_sim + 1)
-    return t, simX, simU, simCost, success, pos
+    return t, simX, simU, simCost, success, pos, simX_mj

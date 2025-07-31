@@ -2,6 +2,7 @@ import numpy as np
 import random
 import config
 import os
+import casadi as ca
 _fk_function = None
 
 
@@ -82,3 +83,50 @@ def compute_end_effector_position(q):
     T = T_fk_fun(q)
     position = np.array(T[:3, 3]).flatten()
     return position
+
+def log_SO3_vee(R):
+    """
+    CasADi-compatible SO(3) logarithm map.
+    Inputs:
+        R : 3×3 CasADi SX rotation matrix
+    Returns:
+        3×1 SX vector (axis-angle) = vee(log(R))
+    """
+    trace_R = ca.trace(R)
+    cos_theta = (trace_R - 1) / 2
+    # Clamp to avoid NaN from acos
+    cos_theta = ca.fmin(ca.fmax(cos_theta, -1 + 1e-9), 1 - 1e-9)
+    theta = ca.acos(cos_theta)
+
+    # Anti-symmetric part
+    omega_hat = 0.5 * (R - R.T)
+    vee = ca.vertcat(
+        omega_hat[2, 1],
+        omega_hat[0, 2],
+        omega_hat[1, 0]
+    )
+
+    # Small-angle safeguard: use first-order Taylor when θ ≈ 0
+    eps = 1e-6
+    A = ca.if_else(theta < eps,
+                   1 + 0 * theta,
+                   theta / (2 * ca.sin(theta)))
+    return A * vee
+
+def skew(v):
+    return ca.vertcat(
+        ca.horzcat( 0,     -v[2],  v[1]),
+        ca.horzcat( v[2],   0,    -v[0]),
+        ca.horzcat(-v[1],  v[0],  0)
+    )
+
+def SO3_target_from_log(phi):
+    angle = ca.norm_2(phi)
+    I = ca.SX.eye(3)
+    eps = 1e-6
+    K = skew(phi / (angle + 1e-12))
+    R = I + ca.if_else(angle < eps,
+                       I + K,               # 1st-order
+                       I + (ca.sin(angle)/angle) * K +
+                       ((1 - ca.cos(angle))/(angle**2)) * ca.mtimes(K, K))
+    return R
