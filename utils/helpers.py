@@ -48,10 +48,11 @@ def generate_random_initial_guess(min_random=None, max_random=None):
         u_guess[j] = round(random.uniform(min_random, max_random), 2)
     return u_guess
 
-def generate_grid_initial_guesses(u4_min, u4_max, step=2.5):
-    u4_range = np.arange(u4_min, u4_max + step, step)
-    u5_range = np.arange(config.U5_MIN, config.U5_MAX + step, step)
-    u7_range = np.arange(config.U7_MIN, config.U7_MAX + step, step)
+def generate_grid_initial_guesses(u4_min, u4_max, step=5):
+    
+    u4_range = np.linspace(u4_min, u4_max, num=step)
+    u5_range = np.linspace(config.U5_MIN, config.U5_MAX, num=step)
+    u7_range = np.linspace(config.U7_MIN, config.U7_MAX, num=step)
     u4_grid, u5_grid, u7_grid = np.meshgrid(u4_range, u5_range, u7_range)
     u4_flat = u4_grid.flatten()
     u5_flat = u5_grid.flatten()

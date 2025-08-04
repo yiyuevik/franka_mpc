@@ -21,7 +21,7 @@ def plot_trajectories(joint_positions, torques, end_effector_positions, target_p
     axs[0].grid(True)
     # Plot joint torques over time
     axs[1].plot(torques)
-    axs[1].set_ylabel("Joint Torque (Nm)")
+    axs[1].set_ylabel("Joint Velocity (rad/s)")
     axs[1].legend([f"τ{i+1}" for i in range(torques.shape[1])])
     axs[1].grid(True)
     # Plot joint angles over time

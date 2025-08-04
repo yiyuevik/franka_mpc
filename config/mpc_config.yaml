@@ -1,5 +1,5 @@
 # MPC configuration parameters
-Horizon: 64                # Prediction horizon (number of time steps)
+Horizon: 128                # Prediction horizon (number of time steps)
 Ts: 0.01                    # Sampling time step in seconds
 
 # State and input dimensions
@@ -47,4 +47,4 @@ U5_MIN : -3.142
 U5_MAX : 3.142
 U7_MIN : -3.142
 U7_MAX : 3.142
-STEP : 0.2
+STEP : 10

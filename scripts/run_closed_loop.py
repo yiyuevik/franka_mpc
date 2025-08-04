@@ -31,14 +31,17 @@ def main():
     # 4) Set initial control guess for the solver
     u_guess = generate_random_initial_guess()
     # If desired, one can manually specify a particular initial guess, e.g.:
-    u_guess = np.array([0.0, 0.0, 0.0, 0, 0, 0.0, 20])
-    ocp_solver.set(0, "x", x0)
-    # for j in range(config.Horizon):
-    #     ocp_solver.set(j, "u", u_guess)
+    u_guess = np.array([0.0,
+        0.0,
+        0.0,
+        -1.5156842105263157,
+        -3.142,
+        0.0,
+        -0.1653684210526314])
    
     # 5) Run closed-loop simulation using MuJoCo physics
     start_time = time.time()
-    t, simX, simU, simCost, success, pos, simX_mj = simulate_closed_loop_mujoco(ocp, ocp_solver, mujoco_sim, x0, N_sim=N_sim)
+    t, simX, simU, simCost, success, pos = simulate_closed_loop_mujoco(ocp, ocp_solver, mujoco_sim, x0, u_guess, N_sim=N_sim)
     end_time = time.time()
     print("first value of simX:", simX[0, :])  # initial state
     print("second value of simX:", simX[1, :])  
@@ -56,10 +59,9 @@ def main():
         print("Simulation failed to converge to the target within the given steps.")
     
     # 8) Visualization of results
-    plot_trajectories(simX_mj[:, :7], simU, pos, target_position=config.target_position)
+    plot_trajectories(simX[:, :7], simU, pos, target_position=config.target_position)
     # To view an animation of the end-effector trajectory, you may use:
     # anim = animate_trajectory(pos, target_position=config.target_position)
     # plt.show()  # or anim.save('trajectory_animation.gif') to save
-    
 if __name__ == "__main__":
     main()

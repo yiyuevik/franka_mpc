@@ -178,3 +178,5 @@ __pycache__/
 c_generated_code/
 acados_ocp_cartpole.json
 acados_ocp_double_pendulum.json
+output/
+data/

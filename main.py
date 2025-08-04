@@ -5,4 +5,4 @@ from scripts.run_closed_loop import main as closed_loop_main
 from scripts.collect_multimodal_trajectories import main as collect_trajectories
 if __name__ == "__main__":
     # collect_trajectories()
-    closed_loop_main()  
+    closed_loop_main()

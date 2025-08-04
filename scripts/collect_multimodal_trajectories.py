@@ -26,7 +26,7 @@ CLUSTER_POS_THRESHOLD = 0.05  # meters
 # Save end-effector trajectory, joint states, etc
 SAVE_POS_DIM = 3
 
-N_SIM = 200  # Simulation horizon
+N_SIM = 150  # Simulation horizon
 
 def run_single_sim(i, u_guess, x0, N_sim):
     try:
@@ -73,8 +73,7 @@ def main():
     print(f"Total initial guess combinations: {total_combinations}")
 
     # ---------- 2. Run All Simulations in multiprocess ---------
-    x0 = np.array([0, -0.25*np.pi, 0, -0.75*np.pi, 0, 0.5*np.pi, 0.25*np.pi,
-                   0, 0, 0, 0, 0, 0, 0], dtype=float)
+    x0 = np.array([0, -0.25*np.pi, 0, -0.75*np.pi, 0, 0.5*np.pi, 0.25*np.pi], dtype=float)
 
     print("Starting simulation loop...")
     time_begin = time.time()

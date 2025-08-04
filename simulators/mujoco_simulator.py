@@ -107,7 +107,7 @@ class MuJoCoSimulator:
         return mujoco_ee_pos, casadi_ee_pos
     
 
-def simulate_closed_loop_mujoco(ocp, ocp_solver, mujoco_sim, x0, N_sim=50, nMaxGuess=1):
+def simulate_closed_loop_mujoco(ocp, ocp_solver, mujoco_sim, x0, u_guess, N_sim=50, nMaxGuess=1):
     """
     Simulate closed-loop control using the MuJoCo simulator for physics.
     Returns (t, simX, simU, simCost, success).
@@ -127,45 +127,88 @@ def simulate_closed_loop_mujoco(ocp, ocp_solver, mujoco_sim, x0, N_sim=50, nMaxG
     mujoco_sim.reset(q_init=x0, qd_init=np.zeros(7))
     pos[0, :] = mujoco_sim.get_end_effector_pos()
 
+
+    # Set initial guess in the OCP solver
+    ocp_solver.set(0, "x", x0)
+    for j in range(config.Horizon):
+        ocp_solver.set(j, "u", u_guess)
     success = True
-    for i in range(N_sim):
-        retries = 0
-        success = True
-        while retries < nMaxGuess:
-            try:
-                # Solve MPC for current state
-                u_opt = ocp_solver.solve_for_x0(x0_bar=simX[i, :])
-                # Prepare warm-start for next iteration
-                u_guess, x_guess = get_guess_from_solver_result(ocp_solver, config.Horizon)
-                clear_solver_state(ocp_solver, config.Horizon)
-                for j in range(config.Horizon):
-                    ocp_solver.set(j, "u", u_guess[:, j])
-                    ocp_solver.set(j, "x", x_guess[:, j])
-                ocp_solver.set(config.Horizon, "x", x_guess[:, -1])
-                
-                # Apply control and simulate one step in MuJoCo
-                simU[i, :] = u_opt
-                simX[i+1, :] = mujoco_sim.step(u_opt)
-                # simX_mj[i * 10:(i + 1) * 10, :] = data
-                simCost[i, :] = ocp_solver.get_cost()
-                pos[i+1, :] = mujoco_sim.get_end_effector_pos()
-                break
-            except Exception as e:
-                success = False
-                print(f"Error in MPC solve: {e}. Retrying with a new initial guess...")
-                print(f"  Step {i}, retry {retries}")
-                time.sleep(2)
+    retries = 0
+    # =================================== first step ===================================
+    ocp_solver.set(0, "x", x0)
+    for j in range(config.Horizon):
+        ocp_solver.set(j, "u", u_guess)
+    retries = 0
+    while retries < nMaxGuess: 
+        try:
+            # Solve MPC for the initial state
+            u_opt = ocp_solver.solve_for_x0(x0_bar=x0)
+            # Prepare warm-start for next iteration
+            u_guess, x_guess = get_guess_from_solver_result(ocp_solver, config.Horizon)
+            clear_solver_state(ocp_solver, config.Horizon)
+            for j in range(config.Horizon):
+                ocp_solver.set(j, "u", u_guess[:, j])
+                ocp_solver.set(j, "x", x_guess[:, j])
+            ocp_solver.set(config.Horizon, "x", x_guess[:, -1])
+            
+            # Apply control and simulate one step in MuJoCo
+            simU[0, :] = u_opt
+            simX[1, :] = mujoco_sim.step(u_opt)
+            simCost[0, :] = ocp_solver.get_cost()
+            pos[1, :] = mujoco_sim.get_end_effector_pos()
+            break
+        except Exception as e:
+            ocp_solver.reset()
+            ocp_solver.set(0, "x", x0)
+            for j in range(config.Horizon):
+                ocp_solver.set(j, "u", u_guess)
             retries += 1
             if retries == nMaxGuess - 1:
-                print("Trying alternative initial state guess (e.g., 2*pi offsets).")
-                for j in range(0, config.Horizon, 20):
-                    ocp_solver.set(j, "x", np.zeros(6))
-                ocp_solver.set(0, "x", np.zeros(6))
-        if not success:
-            print("MPC solve failed after maximum retries.")
-            break
+                success = False
+
+    # ======================== generate data for control step loop =============================
+    if success:
+        for i in range(1, N_sim):
+            retries = 0
+            success = True
+            while retries < nMaxGuess:
+                try:
+                    # Solve MPC for current state
+                    u_opt = ocp_solver.solve_for_x0(x0_bar=simX[i, :])
+                    # Prepare warm-start for next iteration
+                    u_guess, x_guess = get_guess_from_solver_result(ocp_solver, config.Horizon)
+                    clear_solver_state(ocp_solver, config.Horizon)
+                    for j in range(config.Horizon):
+                        ocp_solver.set(j, "u", u_guess[:, j])
+                        ocp_solver.set(j, "x", x_guess[:, j])
+                    ocp_solver.set(config.Horizon, "x", x_guess[:, -1])
+                    
+                    # Apply control and simulate one step in MuJoCo
+                    simU[i, :] = u_opt
+                    simX[i+1, :] = mujoco_sim.step(u_opt)
+                    simCost[i, :] = ocp_solver.get_cost()
+                    pos[i+1, :] = mujoco_sim.get_end_effector_pos()
+                    
+                    break
+                except Exception as e:
+                    ocp_solver.reset()
+                    ocp_solver.set(0, "x", simX[i, :])
+                    u_guess = generate_random_initial_guess()
+                    for j in range(config.Horizon):
+                        ocp_solver.set(j, "u", u_guess)
+                    print(f"Error in MPC solve: {e}. Retrying with a new initial guess u_guess: {u_guess}...")
+                    print(f"  Step {i}, retry {retries}")
+                retries += 1
+                if retries == nMaxGuess - 1:
+                    success = False
+                    print(f"  Step {i}, failed after {nMaxGuess} retries.")
+            if not success:
+                print("MPC solve failed after maximum retries.")
+                break
+   
+    
     
     # Clear solver to free memory
     clear_solver_state(ocp_solver, config.Horizon)
     t = np.linspace(0, N_sim * config.Ts, N_sim + 1)
-    return t, simX, simU, simCost, success, pos, simX_mj
+    return t, simX, simU, simCost, success, pos
