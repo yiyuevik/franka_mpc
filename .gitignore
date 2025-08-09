@@ -180,3 +180,8 @@ acados_ocp_cartpole.json
 acados_ocp_double_pendulum.json
 output/
 data/
+
+acados_ocp_franka.json
+trajectory_3d.png
+trajectory.png
+acados_ocp_franka.json

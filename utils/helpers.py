@@ -32,20 +32,29 @@ def get_guess_from_solver_result(ocp_solver, N_horizon):
     x_guess[:, N_horizon] = ocp_solver.get(N_horizon, "x")
     return u_guess, x_guess
 
-def generate_random_initial_guess(min_random=None, max_random=None):
+def generate_random_initial_guess(u4_min=None, u4_max=None, u5_min = None, u5_max=None, u7_min=None, u7_max=None):
     """
     Generate a random initial guess for the control input (joint torques).
     By default, this randomizes a subset of joint torques (the 4th, 5th, and 7th joints) within the configured range, while others are set to zero.
     """
-    if min_random is None:
-        min_random = config.initial_guess_min
-    if max_random is None:
-        max_random = config.initial_guess_max
+    if u4_min is None:
+        u4_min = config.U4_MIN
+    if u4_max is None:
+        u4_max = config.U4_MAX
+    if u5_min is None:
+        u5_min = config.U5_MIN
+    if u5_max is None:
+        u5_max = config.U5_MAX
+    if u7_min is None:
+        u7_min = config.U7_MIN
+    if u7_max is None:
+        u7_max = config.U7_MAX
+
     u_guess = np.zeros(config.Num_Input)
     # Randomize specific joint indices 3, 4, 6 (0-based) corresponding to joints 4, 5, 7
-    random_indices = [3, 4, 6]
-    for j in random_indices:
-        u_guess[j] = round(random.uniform(min_random, max_random), 2)
+    u_guess[3] = round(random.uniform(u4_min, u4_max), 2)
+    u_guess[4] = round(random.uniform(u5_min, u5_max), 2)
+    u_guess[6] = round(random.uniform(u7_min, u7_max), 2)
     return u_guess
 
 def generate_grid_initial_guesses(u4_min, u4_max, step=5):
@@ -84,6 +93,14 @@ def compute_end_effector_position(q):
     T = T_fk_fun(q)
     position = np.array(T[:3, 3]).flatten()
     return position
+
+def compute_end_effector_position_symbolic(q):
+    """
+    CasADi MX symbolic version of end-effector position.
+    """
+    T_fk_fun = _initialize_forward_kinematics()  # This returns CasADi function!
+    T = T_fk_fun(q)
+    return T[:3, 3]  # symbolic 3x1 MX
 
 def log_SO3_vee(R):
     """
@@ -131,3 +148,16 @@ def SO3_target_from_log(phi):
                        I + (ca.sin(angle)/angle) * K +
                        ((1 - ca.cos(angle))/(angle**2)) * ca.mtimes(K, K))
     return R
+
+def obstacle_constraint_expr(q, o_p, o_s):
+    """ Compute the squared distance from the end-effector position to an obstacle.
+    Args:
+        q : 7x1 CasADi MX vector of joint angles
+        o_p : 3x1 CasADi MX vector of obstacle position
+        o_s : 3x1 CasADi MX vector of obstacle size (radius)
+    Returns:
+        CasADi MX scalar expression representing the squared distance.
+    """
+    ee_pos = compute_end_effector_position_symbolic(q)  # CasADi MX 3x1 vector
+    scaled_diff = (ee_pos - o_p) * o_s         # element-wise multiply
+    return ca.sumsqr(scaled_diff)              # return scalar expression

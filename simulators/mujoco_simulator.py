@@ -4,7 +4,7 @@ import os
 import time
 
 import config
-from utils.helpers import clear_solver_state, get_guess_from_solver_result, compute_end_effector_position
+from utils.helpers import clear_solver_state, get_guess_from_solver_result, compute_end_effector_position, generate_random_initial_guess
 
 class MuJoCoSimulator:
     """

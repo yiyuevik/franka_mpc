@@ -7,6 +7,7 @@ import time
 import config
 from models.franka_model import export_franka_ode_model
 from utils.helpers import clear_solver_state, get_guess_from_solver_result, compute_end_effector_position
+from utils.helpers import obstacle_constraint_expr
 
 def create_ocp_solver(x0):
     """
@@ -91,6 +92,12 @@ def create_ocp_solver(x0):
     ocp.constraints.idxbu = np.arange(7)
     ocp.constraints.lbu = tau_min
     ocp.constraints.ubu = tau_max
+
+    # Obstacle avoidance constraints
+    if config.Obstacle_Avoidance:
+        ocp.constraints.lh = np.array([1.0])  # lower bound for the constraint
+        ocp.constraints.uh = np.array([1e10])  # upper bound
+        ocp.dims.nh = 1
     
     # Solver settings
     ocp.solver_options.qp_solver = "FULL_CONDENSING_HPIPM"
@@ -104,7 +111,7 @@ def create_ocp_solver(x0):
     # Create ACADOS solver and integrator
     # True for generate, build, and compile the C code
     # False for just loading the pre-generated JSON file
-    is_generate = True
+    is_generate = False
     acados_solver = AcadosOcpSolver(ocp, json_file="acados_ocp_franka.json", generate=is_generate, build=is_generate)
     acados_integrator = AcadosSimSolver(ocp, json_file="acados_ocp_franka.json", generate=is_generate, build=is_generate)
     return ocp, acados_solver, acados_integrator

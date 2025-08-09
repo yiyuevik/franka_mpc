@@ -79,7 +79,7 @@ def main():
     time_begin = time.time()
 
     results = []
-    with ProcessPoolExecutor(max_workers=(os.cpu_count()-2)) as executor:
+    with ProcessPoolExecutor(max_workers=(os.cpu_count()-1)) as executor:
         futures = [
             executor.submit(run_single_sim, i, u_guess, x0, N_SIM)
             for i, u_guess in enumerate(all_initial_guesses)

@@ -48,3 +48,8 @@ U5_MAX : 3.142
 U7_MIN : -3.142
 U7_MAX : 3.142
 STEP : 10
+
+# Obstacle avoidance configuration
+Obstacle_Avoidance: true       # Enable or disable obstacle avoidance
+Obstacle_Position: [0.2566, 0.2671, 0.5460]  # Position of the obstacle in 3D space (x, y, z)
+Obstacle_Scale: [31.25, 31.25, 31.25]  # Scale (size) of the obstacle in 3D space (x, y, z)

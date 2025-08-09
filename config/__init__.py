@@ -37,3 +37,8 @@ U5_MAX = cfg.get("U5_MAX", 20.0)
 U7_MIN = cfg.get("U7_MIN", -20.0)
 U7_MAX = cfg.get("U7_MAX", 20.0)
 STEP = cfg.get("STEP", 5)
+
+# Obstacle avoidance configuration
+Obstacle_Avoidance = cfg.get("Obstacle_Avoidance", False)
+Obstacle_Position = np.array(cfg.get("Obstacle_Position", [0.2566, 0.2671, 0.5460]))
+Obstacle_Scale = np.array(cfg.get("Obstacle_Scale", [31.25, 31.25, 31.25]))

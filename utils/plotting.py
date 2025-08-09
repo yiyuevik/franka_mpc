@@ -2,6 +2,7 @@ import matplotlib.pyplot as plt
 from mpl_toolkits.mplot3d import Axes3D  # ensure 3D plotting is available
 from matplotlib.animation import FuncAnimation
 import numpy as np
+import plotly.graph_objects as go
 
 def plot_trajectories(joint_positions, torques, end_effector_positions, target_position=None):
     """
@@ -35,25 +36,58 @@ def plot_trajectories(joint_positions, torques, end_effector_positions, target_p
     plt.show()
     # plt.close(fig)
     
-    # 3D trajectory plot for end-effector path
-    fig = plt.figure(figsize=(8, 6))
-    ax = fig.add_subplot(111, projection='3d')
-    # Plot the end-effector path in 3D
-    ax.plot(end_effector_positions[:, 0], end_effector_positions[:, 1], end_effector_positions[:, 2], 'b-', label='End Effector Path')
-    # Mark start, target, and end points
-    ax.scatter(end_effector_positions[0, 0], end_effector_positions[0, 1], end_effector_positions[0, 2], c='g', s=100, label='Start')
+    # 3D interactive trajectory (Plotly)
+    pos = end_effector_positions
+    fig3d = go.Figure()
+
+    # Path
+    fig3d.add_trace(go.Scatter3d(
+        x=pos[:, 0], y=pos[:, 1], z=pos[:, 2],
+        mode='lines',
+        line=dict(color='blue', width=4),
+        name='End Effector Path'
+    ))
+
+    # Start
+    fig3d.add_trace(go.Scatter3d(
+        x=[pos[0, 0]], y=[pos[0, 1]], z=[pos[0, 2]],
+        mode='markers',
+        marker=dict(color='green', size=6),
+        name='Start'
+    ))
+
+    # End
+    fig3d.add_trace(go.Scatter3d(
+        x=[pos[-1, 0]], y=[pos[-1, 1]], z=[pos[-1, 2]],
+        mode='markers',
+        marker=dict(color='blue', size=6),
+        name='End'
+    ))
+
+    # Target
     if target_position is not None:
         target_position = np.array(target_position)
-        ax.scatter(target_position[0], target_position[1], target_position[2], c='r', s=100, label='Target')
-    ax.scatter(end_effector_positions[-1, 0], end_effector_positions[-1, 1], end_effector_positions[-1, 2], c='b', s=100, label='End')
-    ax.set_xlabel('X (m)')
-    ax.set_ylabel('Y (m)')
-    ax.set_zlabel('Z (m)')
-    ax.set_title('End Effector Trajectory')
-    ax.legend()
-    plt.tight_layout()
-    plt.savefig("trajectory_3d.png")
-    plt.show()
+        fig3d.add_trace(go.Scatter3d(
+            x=[target_position[0]], y=[target_position[1]], z=[target_position[2]],
+            mode='markers',
+            marker=dict(color='red', size=6),
+            name='Target'
+        ))
+
+    fig3d.update_layout(
+        scene=dict(
+            xaxis_title='X (m)',
+            yaxis_title='Y (m)',
+            zaxis_title='Z (m)'
+        ),
+        title='End Effector Trajectory (Interactive)',
+        margin=dict(l=0, r=0, b=0, t=30)
+    )
+
+    # Save interactive HTML
+    fig3d.write_html("trajectory_3d.html")
+
+
 
 def animate_trajectory(end_effector_positions, target_position=None, interval=50):
     """

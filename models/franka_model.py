@@ -10,7 +10,7 @@ from acados_template import AcadosModel
 import urdf2casadi.urdfparser as u2c
 import config
 import os
-from utils.helpers import log_SO3_vee, SO3_target_from_log
+from utils.helpers import log_SO3_vee, SO3_target_from_log, obstacle_constraint_expr
 
 def export_franka_ode_model():
     """
@@ -61,6 +61,14 @@ def export_franka_ode_model():
     model.p = p_sym
     model.f_expl_expr = f_expl
     model.f_impl_expr = f_impl
+
+    # Obstacle avoidance constraints
+    if config.Obstacle_Avoidance:
+        # Define obstacle position and size (radius)
+        o_p = config.Obstacle_Position  # 3D position of the obstacle
+        o_s = config.Obstacle_Scale      # 3D size (radius) of the obstacle
+        model.con_h_expr = obstacle_constraint_expr(model.x, o_p, o_s)
+
     # Cost outputs: include end-effector position and control in stage cost, end-effector position in terminal cost
     model.cost_y_expr = ca.vertcat(pos - p_sym[:3], rot_err, u_sym)   # dimension: (3 position + 3 orientation + 7 control)
     model.cost_y_expr_e = ca.vertcat(pos - p_sym[:3], rot_err)      # dimension:  (3 position + 3 orientation)

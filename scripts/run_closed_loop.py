@@ -34,10 +34,10 @@ def main():
     u_guess = np.array([0.0,
         0.0,
         0.0,
-        -1.5156842105263157,
-        -3.142,
         0.0,
-        -0.1653684210526314])
+        0.0,
+        0.0,
+        0.0], dtype=float)  # all zeros, or any other specific guess
    
     # 5) Run closed-loop simulation using MuJoCo physics
     start_time = time.time()
