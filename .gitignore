@@ -185,3 +185,5 @@ acados_ocp_franka.json
 trajectory_3d.png
 trajectory.png
 acados_ocp_franka.json
+
+mpc_multimodal_*/
