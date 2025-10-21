@@ -1,0 +1,67 @@
+# MPC configuration parameters
+Horizon: 20                 # Prediction horizon (number of time steps)
+Ts: 0.1                    # Sampling time step in seconds
+
+# State and input dimensions
+Num_State: 7                # State dimension (7 joint angles)
+Num_P: 6                    # End-effector pose output dimension(3 position + 3 orientation)
+Num_Input: 7                # Control input dimension (number of joint velocities)
+
+# Physical constants and robot model parameters
+root: "panda_link0"         # URDF root link name for the robot
+tip: "panda_link8"          # URDF end-effector link name for the robot
+
+# Parallel processing parameters
+Num_Group : 100                # Number of groups for parallel processing
+# Noisy data collection parameters
+Num_Noisy_Data: 15          # Number of noisy data points
+Noise_Mean: 0
+Noise_Std: 0.05
+
+# Cost function weight matrices
+Q_pos:                          # Weight matrix for end-effector position error (3x3)
+  - [ 0.1,  0.0,  0.0]
+  - [ 0.0,  0.1,  0.0]
+  - [ 0.0,  0.0,  0.1]
+Q_rot:                          # Weight matrix for end-effector orientation error (3x3)
+  - [ 0.5,  0.0,  0.0]
+  - [ 0.0,  0.5,  0.0]
+  - [ 0.0,  0.0,  0.5]
+R:                          # Weight matrix for control effort (7x7)
+  - [0.01, 0.0,  0.0,  0.0,  0.0,  0.0,  0.0]
+  - [0.0,  0.01, 0.0,  0.0,  0.0,  0.0,  0.0]
+  - [0.0,  0.0,  0.01, 0.0,  0.0,  0.0,  0.0]
+  - [0.0,  0.0,  0.0,  0.01, 0.0,  0.0,  0.0]
+  - [0.0,  0.0,  0.0,  0.0,  0.01, 0.0,  0.0]
+  - [0.0,  0.0,  0.0,  0.0,  0.0,  0.01, 0.0]
+  - [0.0,  0.0,  0.0,  0.0,  0.0,  0.0,  0.01]
+P_pos:                          # Terminal cost weight matrix (same size as Q, often equal to Q)
+  - [1000.0,    0.0,    0.0]
+  - [   0.0, 1000.0,    0.0]
+  - [   0.0,    0.0, 1000.0]
+
+P_rot:                          # Terminal cost weight matrix for orientation (same size as Q_rot, often equal to Q_rot)
+  - [ 0.1,  0.0,  0.0]
+  - [ 0.0,  0.1,  0.0]
+  - [ 0.0,  0.0,  0.1]
+
+# Initial guess parameters for MPC (randomization range for select joints)
+initial_guess_min: -20.0    # Minimum random torque for initial guess (Nm)
+initial_guess_max: 20.0     # Maximum random torque for initial guess (Nm)
+
+target_position: [0.5068906, 0.2, 0.5902821]  # Target end-effector position (x, y, z) in meters
+
+# Initial guess grid
+U3_MIN : -3
+U3_MAX : 3
+U5_MIN : -3
+U5_MAX : 3
+U6_MIN : -3
+U6_MAX : 3
+STEP : 10
+
+
+# Obstacle avoidance configuration
+Obstacle_Avoidance: True       # Enable or disable obstacle avoidance
+Obstacle_Position: [0.4068906, 0.1, 0.5902821]  # Position of the obstacle in 3D space (x, y, z)
+Obstacle_Scale: [20, 20, 20]  # Scale (size) of the obstacle in 3D space (x, y, z)

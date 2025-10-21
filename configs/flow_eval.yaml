@@ -1,0 +1,22 @@
+device: auto
+
+env:
+  xml: xml/panda_arm_modified.xml    # 你的仿真 XML
+
+model:
+  state_dim: 7
+  action_dim: 7
+  horizon: 20
+  hidden_size: 256
+  depth: 8
+  num_heads: 8
+
+policy:
+  ckpt: checkpoints/final_ema.pth
+  norm_stats: checkpoints/norm_stats_final.pt
+  ode_steps: 100
+  # action_clip: 1.0
+
+eval:
+  steps: 100
+  save_dir: logs/flow_closed_loop

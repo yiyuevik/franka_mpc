@@ -1,0 +1,38 @@
+data:
+  dir: data/multimodality/parallel_rollout_20251016_101609
+  state_pt: x_tensor_161497_20_7.pt
+  action_pt: u_tensor_161497_20_7.pt
+  x0_pt: x0_tensor_161497_7.pt
+  normalize:
+    state: gaussian
+    action: gaussian
+
+model:
+  state_dim: 7
+  action_dim: 7
+  horizon: 20
+  hidden_size: 256
+  depth: 8
+  num_heads: 8
+
+train:
+  device: auto
+  batch_size: 32
+  lr: 0.0002
+  n_train_steps: 101000
+  save_freq: 5000
+  save_dir: checkpoints
+  log_every: 50
+
+  scheduler:
+    type: cosine   # 每步 scheduler.step()，无 warmup
+
+  ema:
+    use: true
+    decay: 0.995
+    start_epoch: 0
+
+  seed: 0
+
+flow:
+  type: cfm   # cfm / ot_cfm / vp_cfm / sb_cfm

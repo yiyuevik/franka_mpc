@@ -1,0 +1,10 @@
+data/
+c_generated_code/
+__pycache__/
+*.pyc
+logs/
+envs/
+checkpoints/
+*.zip/
+c_generated_code/
+__pycache__

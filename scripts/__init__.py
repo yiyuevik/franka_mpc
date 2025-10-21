@@ -1,0 +1,9 @@
+from .run_closed_loop import main as run_closed_loop
+from .collect_multimodal_trajectories import main as collect_multimodal_trajectories
+from .mpc_ipopt_franka import main as mpc_ipopt_franka
+from .calculate_axis_importance import main as calculate_axis_importance
+from .data_collect import main as data_collect
+from .smoke_env import main as smoke_env
+from .generate_dataset import main as generate_dataset
+from .train import main as train
+from .run_closed_loop_flow import main as run_closed_loop_flow
