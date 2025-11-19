@@ -11,17 +11,22 @@ from simulators.mujoco_simulator import MuJoCoSimulator
 import matplotlib.pyplot as plt
 
 # --- Task function: Solve OCP for multiple disturbed points ---
-def solve_branches_for_one_point(x_list, N_horizon):
+def solve_branches_for_one_point(x_list, x_guess, u_guess, N_horizon):
     
 
     results = []
     x0 = x_list[0]  # Use the first point as x0 for solver initialization
+    ocp, solver, _   = create_ocp_solver(x0)
     for x in x_list:
         try:
-            ocp, solver, _   = create_ocp_solver(x)
+            # 如果u_guess是[7,],则扩展为[7, N_horizon]
+            if u_guess.ndim == 1:
+                u_guess = np.tile(u_guess.reshape(-1,1), (1, N_horizon))
+                x_guess = np.tile(x_guess.reshape(-1,1), (1, N_horizon+1))
             for j in range(configs.Horizon):
-                solver.set(j, "x", x)
-            solver.set(configs.Horizon, "x", x)
+                solver.set(j, "x", x_guess[:, j])
+                solver.set(j, "u", u_guess[:, j])
+            solver.set(configs.Horizon, "x", x_guess[:, -1])
             solver.solve_for_x0(x0_bar=x)
             x_traj, u_traj, Pos_traj = get_traj(ocp_solver=solver, N=N_horizon, nx=configs.Num_State, nu=configs.Num_Input)
             # cost = solver.get_cost()
@@ -54,12 +59,13 @@ def run_main_group(x0_init, group_id, N_step, N_horizon, n_branch, n_branch_work
 
     simX_main = []
     simU_main = []
+    pos_main = []
     X_traj = np.zeros((N_step+1, configs.Num_State))
     # simCost_main = []
     # pos = []
-    
+
     branch_pool = ProcessPoolExecutor(max_workers=n_branch_workers)
-    branch_pool_th = ThreadPoolExecutor(max_workers=n_branch_workers)
+    # branch_pool_th = ThreadPoolExecutor(max_workers=n_branch_workers)
     branch_features = []
 
 
@@ -71,8 +77,9 @@ def run_main_group(x0_init, group_id, N_step, N_horizon, n_branch, n_branch_work
     x_curr = x0_init.copy()
     X_traj[0, :] = x0_init
     branch_points = sample_states_around(x_curr, n_branch)
-    future = branch_pool_th.submit(solve_branches_for_one_point, branch_points, N_horizon)
-    branch_features.append((0, future))
+    future_0 = solve_branches_for_one_point(branch_points, x0_init, u_guess, N_horizon)
+    # future = branch_pool_th.submit(solve_branches_for_one_point, branch_points, u_guess, N_horizon)
+    
     # ======================== generate data for control step loop =============================
     for step in range(N_step):
         retries = 0
@@ -84,14 +91,15 @@ def run_main_group(x0_init, group_id, N_step, N_horizon, n_branch, n_branch_work
                 # Prepare warm-start for next iteration
                 x_traj, u_traj, Pos_traj = get_traj(ocp_solver=ocp_solver, N=N_horizon, nx=configs.Num_State, nu=configs.Num_Input)
                 u_guess, x_guess = get_guess_from_solver_result(ocp_solver, configs.Horizon)
-                clear_solver_state(ocp_solver, configs.Horizon)
-                for j in range(configs.Horizon):
-                    ocp_solver.set(j, "u", u_guess[:, j])
-                    ocp_solver.set(j, "x", x_guess[:, j])
-                ocp_solver.set(configs.Horizon, "x", x_guess[:, -1])
+                # clear_solver_state(ocp_solver, configs.Horizon)
+                # for j in range(configs.Horizon):
+                #     ocp_solver.set(j, "u", u_guess[:, j])
+                #     ocp_solver.set(j, "x", x_guess[:, j])
+                # ocp_solver.set(configs.Horizon, "x", x_guess[:, -1])
                 # Apply control and simulate one step in MuJoCo
                 simU_main.append(u_traj)
                 simX_main.append(x_traj)
+                pos_main.append(mujoco_sim.get_end_effector_pos())
                 x_curr = mujoco_sim.step(u_traj[0])
                 X_traj[step+1, :] = x_curr
                 # create a plot of Pos_traj and save to file
@@ -121,7 +129,7 @@ def run_main_group(x0_init, group_id, N_step, N_horizon, n_branch, n_branch_work
                 # simCost_main.append(ocp_solver.get_cost())
                 # Asynchronously submit branch tasks (using shared process pool)
                 branch_points = sample_states_around(x_curr, n_branch)
-                future = branch_pool.submit(solve_branches_for_one_point, branch_points, N_horizon)
+                future = branch_pool.submit(solve_branches_for_one_point, branch_points, x_guess, u_guess, N_horizon)
                 branch_features.append((step+1, future))
                 break
             except Exception as e:
@@ -146,6 +154,7 @@ def run_main_group(x0_init, group_id, N_step, N_horizon, n_branch, n_branch_work
     # Save main trajectory
     np.save(os.path.join(save_dir, "main_simX.npy"), np.array(simX_main))
     np.save(os.path.join(save_dir, "main_simU.npy"), np.array(simU_main))
+    np.save(os.path.join(save_dir, "main_pos.npy"), np.array(pos_main))
     # np.save(os.path.join(save_dir, "main_simCost.npy"), np.array(simCost_main))
     print(f"[Group {group_id}] Main trajectory completed, {len(simX_main)-1} steps.")
 
@@ -168,6 +177,7 @@ def run_main_group(x0_init, group_id, N_step, N_horizon, n_branch, n_branch_work
     # Collect and save branches
     branch_save_dir = os.path.join(save_dir, "branches_data")
     os.makedirs(branch_save_dir, exist_ok=True)
+    np.save(os.path.join(branch_save_dir, f"branch_step_000.npy"), future_0)
     for step, f in branch_features:
         try:
             branch_data = f.result()
@@ -175,8 +185,9 @@ def run_main_group(x0_init, group_id, N_step, N_horizon, n_branch, n_branch_work
         except Exception as e:
             print(f"[Group {group_id}] Branch {step} failed: {e}")
     branch_pool.shutdown(wait=True)
+    # branch_pool_th.shutdown(wait=True)
 
-    return x_traj
+    return X_traj
 
 # --- Main process ---
 def main():
@@ -193,9 +204,10 @@ def main():
     ensure_dir(save_dir)
 
     # === Run multiple main trajectories in parallel ===
-    max_group_parallel = 10
-    n_branch_workers = 8 # Number of workers for branch solving within each group
+    max_group_parallel = 5
+    n_branch_workers = 25 # Number of workers for branch solving within each group
     x_traj_all = []
+    time_start = time.time()
     with ProcessPoolExecutor(max_workers=max_group_parallel) as group_pool:
         futures = []
         for gid, x0_init in enumerate(main_x0_list):
@@ -211,6 +223,7 @@ def main():
             except Exception as e:
                 print(f"One group failed: {e}")
 
+    print(f"\nAll groups completed in {time.time() - time_start:.2f} seconds.")
     x_traj_all = np.array(x_traj_all)
     clusters = []
     rep_traj_list = []

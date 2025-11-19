@@ -14,9 +14,9 @@ model:
 policy:
   ckpt: checkpoints/final_ema.pth
   norm_stats: checkpoints/norm_stats_final.pt
-  ode_steps: 100
+  ode_steps: 30
   # action_clip: 1.0
 
 eval:
-  steps: 100
+  steps: 200
   save_dir: logs/flow_closed_loop

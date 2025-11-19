@@ -22,7 +22,7 @@ def load_branch_firstu_for_step(group_dir: str, step: int):
 def main():
     script_dir = os.path.dirname(os.path.abspath(__file__))
     project_root = os.path.dirname(script_dir)
-    target_dir = os.path.join(project_root, f"data/rollout/parallel_rollout_20250929_120754")
+    target_dir = os.path.join(project_root, f"data/multimodality/parallel_rollout_20251104_1347")
     group_dir = os.path.join(target_dir, f"group_{GROUP:02d}")
     branch_dir = os.path.join(group_dir, "branches_data")
     out_dir = os.path.join(group_dir, OUTDIR)

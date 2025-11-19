@@ -10,7 +10,8 @@ from scripts import (
     smoke_env,
     generate_dataset,
     train,
-    run_closed_loop_flow
+    run_closed_loop_flow,
+    compare_real_vs_sim,
 )
 
 if __name__ == "__main__":
@@ -23,3 +24,4 @@ if __name__ == "__main__":
     # generate_dataset()
     # train()
     run_closed_loop_flow()
+    # compare_real_vs_sim()

@@ -16,7 +16,7 @@ Num_Group : 100                # Number of groups for parallel processing
 # Noisy data collection parameters
 Num_Noisy_Data: 15          # Number of noisy data points
 Noise_Mean: 0
-Noise_Std: 0.05
+Noise_Std: 0.005
 
 # Cost function weight matrices
 Q_pos:                          # Weight matrix for end-effector position error (3x3)
@@ -49,7 +49,7 @@ P_rot:                          # Terminal cost weight matrix for orientation (s
 initial_guess_min: -20.0    # Minimum random torque for initial guess (Nm)
 initial_guess_max: 20.0     # Maximum random torque for initial guess (Nm)
 
-target_position: [0.5068906, 0.2, 0.5902821]  # Target end-effector position (x, y, z) in meters
+target_position: [0.6068906, 0, 0.5902821]  # Target end-effector position (x, y, z) in meters
 
 # Initial guess grid
 U3_MIN : -3
@@ -63,5 +63,5 @@ STEP : 10
 
 # Obstacle avoidance configuration
 Obstacle_Avoidance: True       # Enable or disable obstacle avoidance
-Obstacle_Position: [0.4068906, 0.1, 0.5902821]  # Position of the obstacle in 3D space (x, y, z)
+Obstacle_Position: [0.4568906, 0.0, 0.5802821]  # Position of the obstacle in 3D space (x, y, z)
 Obstacle_Scale: [20, 20, 20]  # Scale (size) of the obstacle in 3D space (x, y, z)

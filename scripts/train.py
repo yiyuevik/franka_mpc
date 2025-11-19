@@ -1,4 +1,5 @@
 import os, yaml, torch, random
+from time import time
 import numpy as np
 from itertools import cycle
 from torch.utils.tensorboard import SummaryWriter
@@ -74,7 +75,7 @@ def main():
     pin_memory=(device.type == 'cuda'),
     )
     base_loader   = loader
-    train_loader  = cycle(base_loader)  # 无限迭代，对齐导师
+    train_loader  = cycle(base_loader)
     steps_per_ep  = len(base_loader) if len(base_loader) > 0 else 1
 
     # ----------------
@@ -158,4 +159,6 @@ def main():
     print('✅ done.')
 
 if __name__ == '__main__':
+    time_start = time.time()
     main()
+    print(f"Total training time: {time.time() - time_start:.2f} seconds")

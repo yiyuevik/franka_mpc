@@ -162,3 +162,4 @@ class FlowPolicy(nn.Module):
         a_norm = X[:, 0, :self.A]                      # (B, A) on CUDA
         a = self.action_norm.unnorm(a_norm).detach().cpu().numpy()
         return a
+

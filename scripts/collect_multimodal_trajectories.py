@@ -247,10 +247,10 @@ def main():
             "count": len(members),
             "initial_guesses": success_initial_guesses[members].tolist()
         }
-        
-        np.save(os.path.join(save_dir_cluster, "trajX.npy"), success_simX[rep_idx])
-        np.save(os.path.join(save_dir_cluster, "trajU.npy"), success_simU[rep_idx])
-        np.save(os.path.join(save_dir_cluster, "cost.npy"), success_simCost[rep_idx])
+
+        np.save(os.path.join(save_dir_cluster, f"trajX_{cid:03d}.npy"), success_simX[rep_idx])
+        np.save(os.path.join(save_dir_cluster, f"trajU_{cid:03d}.npy"), success_simU[rep_idx])
+        np.save(os.path.join(save_dir_cluster, f"cost_{cid:03d}.npy"), success_simCost[rep_idx])
 
     # Save clustering results
     with open(os.path.join(save_dir, "cluster_info.json"), 'w') as f:

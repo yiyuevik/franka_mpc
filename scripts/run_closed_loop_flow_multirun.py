@@ -1,4 +1,5 @@
 # scripts/run_closed_loop_flow_multirun.py
+import csv
 import os, yaml, random
 import numpy as np
 import torch
@@ -23,68 +24,16 @@ def _segments_from_traj(traj_2d: np.ndarray):
     """(T,2) -> (T-1,2,2) segments for LineCollection."""
     return np.stack([traj_2d[:-1], traj_2d[1:]], axis=1)
 
-def plot_multimodal_trajectories_3d_html(
-    poss_list,
-    out_html='multi_trajs_3d.html',
-    target_pos=None,
-    title='Flow (multi-rollouts, 3D)'
-):
-    """
-    Make a simple 3D interactive HTML with multiple trajectories.
-    - poss_list: list of arrays, each (T, 3)
-    - target_pos: optional (3,)
-    """
-    fig = go.Figure()
-
-    # add each rollout as a 3D line
+def save_sim_trajs_csv(poss_list, out_dir):
+    os.makedirs(out_dir, exist_ok=True)
     for k, pos in enumerate(poss_list):
-        fig.add_trace(go.Scatter3d(
-            x=pos[:, 0], y=pos[:, 1], z=pos[:, 2],
-            mode='lines',
-            line=dict(width=3),
-            opacity=0.8,
-            showlegend=False,           # avoid a huge legend
-            name=f'rollout {k}',
-            hoverinfo='none',
-        ))
-
-    # start point (use the first rollout's start)
-    if len(poss_list) > 0:
-        s0 = poss_list[0][0]
-        fig.add_trace(go.Scatter3d(
-            x=[s0[0]], y=[s0[1]], z=[s0[2]],
-            mode='markers',
-            marker=dict(color='green', size=5),
-            name='start',
-            showlegend=True
-        ))
-
-    # target point (optional)
-    if target_pos is not None:
-        target_pos = np.array(target_pos).reshape(-1)
-        fig.add_trace(go.Scatter3d(
-            x=[target_pos[0]], y=[target_pos[1]], z=[target_pos[2]],
-            mode='markers',
-            marker=dict(color='red', size=6),
-            name='target',
-            showlegend=True
-        ))
-
-    fig.update_layout(
-        scene=dict(
-            xaxis_title='X (m)',
-            yaxis_title='Y (m)',
-            zaxis_title='Z (m)',
-            aspectmode='data',
-        ),
-        title=title,
-        margin=dict(l=0, r=0, b=0, t=30),
-        template='plotly_dark',
-    )
-
-    os.makedirs(os.path.dirname(out_html), exist_ok=True)
-    fig.write_html(out_html, include_plotlyjs='cdn')
-    print(f"✅ saved 3D interactive HTML to: {out_html}")
+        path = os.path.join(out_dir, f"sim_rollout_{k+1}.csv")
+        with open(path, "w", newline="") as f:
+            w = csv.writer(f)
+            w.writerow(["step", "x", "y", "z"])
+            for t, p in enumerate(pos):
+                w.writerow([t, float(p[0]), float(p[1]), float(p[2])])
+        print(f"💾 saved: {path}")
 
 # def plot_multimodal_trajectories_3d_html(
 #     poss_list,
@@ -93,7 +42,7 @@ def plot_multimodal_trajectories_3d_html(
 #     title='Flow (multi-rollouts, 3D)'
 # ):
 #     """
-#     Make a 3D interactive HTML with multiple trajectories + optional spherical obstacle.
+#     Make a simple 3D interactive HTML with multiple trajectories.
 #     - poss_list: list of arrays, each (T, 3)
 #     - target_pos: optional (3,)
 #     """
@@ -105,8 +54,8 @@ def plot_multimodal_trajectories_3d_html(
 #             x=pos[:, 0], y=pos[:, 1], z=pos[:, 2],
 #             mode='lines',
 #             line=dict(width=3),
-#             opacity=0.85,
-#             showlegend=False,
+#             opacity=0.8,
+#             showlegend=False,           # avoid a huge legend
 #             name=f'rollout {k}',
 #             hoverinfo='none',
 #         ))
@@ -117,7 +66,7 @@ def plot_multimodal_trajectories_3d_html(
 #         fig.add_trace(go.Scatter3d(
 #             x=[s0[0]], y=[s0[1]], z=[s0[2]],
 #             mode='markers',
-#             marker=dict(color='green', size=6),
+#             marker=dict(color='green', size=5),
 #             name='start',
 #             showlegend=True
 #         ))
@@ -128,38 +77,9 @@ def plot_multimodal_trajectories_3d_html(
 #         fig.add_trace(go.Scatter3d(
 #             x=[target_pos[0]], y=[target_pos[1]], z=[target_pos[2]],
 #             mode='markers',
-#             marker=dict(color='red', size=7),
+#             marker=dict(color='red', size=6),
 #             name='target',
 #             showlegend=True
-#         ))
-
-#     # --- optional spherical obstacle from configs ---
-#     # Expect:
-#     #   configs.Obstacle_Avoidance: bool
-#     #   configs.Obstacle_Position: 3-vector (x, y, z)
-#     #   configs.Obstacle_Scale: 3-vector; radius = 1 / min(scale) (same as your old code)
-#     if getattr(configs, 'Obstacle_Avoidance', False) \
-#        and hasattr(configs, 'Obstacle_Position') \
-#        and hasattr(configs, 'Obstacle_Scale'):
-
-#         center = np.array(configs.Obstacle_Position, dtype=float).reshape(3)
-#         scale  = np.array(configs.Obstacle_Scale, dtype=float).reshape(3)
-#         radius = 1.0 / max(1e-8, np.min(scale))  # avoid div-by-zero
-
-#         # sphere mesh
-#         u = np.linspace(0, 2*np.pi, 60)
-#         v = np.linspace(0, np.pi, 40)
-#         x_s = center[0] + radius * np.outer(np.cos(u), np.sin(v))
-#         y_s = center[1] + radius * np.outer(np.sin(u), np.sin(v))
-#         z_s = center[2] + radius * np.outer(np.ones_like(u), np.cos(v))
-
-#         fig.add_trace(go.Surface(
-#             x=x_s, y=y_s, z=z_s,
-#             colorscale=[[0, 'red'], [1, 'darkred']],
-#             opacity=0.5,
-#             showscale=False,
-#             name='obstacle',
-#             hovertemplate='<b>Obstacle</b><br>Center: (%.3f, %.3f, %.3f)<br>R: %.3f<extra></extra>' % (*center, radius)
 #         ))
 
 #     fig.update_layout(
@@ -177,6 +97,100 @@ def plot_multimodal_trajectories_3d_html(
 #     os.makedirs(os.path.dirname(out_html), exist_ok=True)
 #     fig.write_html(out_html, include_plotlyjs='cdn')
 #     print(f"✅ saved 3D interactive HTML to: {out_html}")
+
+def plot_multimodal_trajectories_3d_html(
+    poss_list,
+    out_html='multi_trajs_3d.html',
+    target_pos=None,
+    title='Flow (multi-rollouts, 3D)'
+):
+    """
+    Make a 3D interactive HTML with multiple trajectories + optional spherical obstacle.
+    - poss_list: list of arrays, each (T, 3)
+    - target_pos: optional (3,)
+    """
+    fig = go.Figure()
+
+    # add each rollout as a 3D line
+    for k, pos in enumerate(poss_list):
+        fig.add_trace(go.Scatter3d(
+            x=pos[:, 0], y=pos[:, 1], z=pos[:, 2],
+            mode='lines',
+            line=dict(width=3),
+            opacity=0.85,
+            showlegend=False,
+            name=f'rollout {k}',
+            hoverinfo='none',
+        ))
+    
+    # start point (use the first rollout's start)
+    if len(poss_list) > 0:
+        s0 = poss_list[0][0]
+        fig.add_trace(go.Scatter3d(
+            x=[s0[0]], y=[s0[1]], z=[s0[2]],
+            mode='markers',
+            marker=dict(color='green', size=6),
+            name='start',
+            showlegend=True
+        ))
+
+    # target point (optional)
+    if target_pos is not None:
+        target_pos = np.array(target_pos).reshape(-1)
+        fig.add_trace(go.Scatter3d(
+            x=[target_pos[0]], y=[target_pos[1]], z=[target_pos[2]],
+            mode='markers',
+            marker=dict(color='red', size=7),
+            name='target',
+            showlegend=True
+        ))
+
+    # --- optional spherical obstacle from configs ---
+    # Expect:
+    #   configs.Obstacle_Avoidance: bool
+    #   configs.Obstacle_Position: 3-vector (x, y, z)
+    #   configs.Obstacle_Scale: 3-vector; radius = 1 / min(scale) (same as your old code)
+    if getattr(configs, 'Obstacle_Avoidance', False) \
+       and hasattr(configs, 'Obstacle_Position') \
+       and hasattr(configs, 'Obstacle_Scale'):
+
+        center = np.array(configs.Obstacle_Position)
+        scale = np.array(configs.Obstacle_Scale)
+        radius = 1 / (np.min(scale)) 
+
+        # sphere mesh
+        u = np.linspace(0, 2 * np.pi, 30)
+        v = np.linspace(0, np.pi, 20)
+        x_sphere = center[0] + radius * np.outer(np.cos(u), np.sin(v))
+        y_sphere = center[1] + radius * np.outer(np.sin(u), np.sin(v))
+        z_sphere = center[2] + radius * np.outer(np.ones(np.size(u)), np.cos(v))
+        
+        fig.add_trace(go.Surface(
+            x=x_sphere, y=y_sphere, z=z_sphere,
+            colorscale=[[0, 'red'], [1, 'darkred']],
+            opacity=0.7,
+            showscale=False,
+            name='Obstacle',
+            hovertemplate='<b>Obstacle</b><br>Center: (%.3f, %.3f, %.3f)<br>Radius: %.3f<extra></extra>' % (*center, radius)
+        ))
+
+
+    fig.update_layout(
+        scene=dict(
+            xaxis_title='X (m)',
+            yaxis_title='Y (m)',
+            zaxis_title='Z (m)',
+            aspectmode='data',
+        ),
+        title=title,
+        margin=dict(l=0, r=0, b=0, t=30),
+        # template='fixed_axes',
+        uirevision="fixed_axes"
+    )
+
+    os.makedirs(os.path.dirname(out_html), exist_ok=True)
+    fig.write_html(out_html, include_plotlyjs='cdn')
+    print(f"✅ saved 3D interactive HTML to: {out_html}")
 
 
 # def plot_multimodal_trajectories_2d(
@@ -306,7 +320,12 @@ def main(cfg_path="configs/flow_eval.yaml", n_rollouts=64, plane='xy', save_dir=
 
     # to ndarray (T+1, 3)
     poss_list = [np.array(p) for p in poss_list]
+    
 
+    csv_dir = os.path.join(save_dir, "sim_trajs_csv")
+    save_sim_trajs_csv(poss_list, csv_dir)
+
+    
     # --- 3D interactive HTML (multi trajectories) ---
     out_html = os.path.join(save_dir, "multi_trajs_3d.html")
     plot_multimodal_trajectories_3d_html(

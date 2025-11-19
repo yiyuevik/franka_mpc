@@ -5,13 +5,13 @@ import numpy as np
 import plotly.graph_objects as go
 import configs
 
-def plot_trajectories(joint_positions, torques, end_effector_positions, target_position=None):
+def plot_trajectories(states, inputs, end_effector_positions, target_position=None, idx = None):
     """
-    Plot the end-effector position trajectory, joint torques, and joint angles over time.
+    Plot the end-effector position trajectory, joint inputs, and joint angles over time.
     Saves two plots: a time-series plot of positions/torques/angles ('trajectory.png') and a 3D trajectory plot ('trajectory_3d.png').
     """
-    joint_positions = np.array(joint_positions)
-    torques = np.array(torques)
+    states = np.array(states)
+    inputs = np.array(inputs)
     end_effector_positions = np.array(end_effector_positions)
     
     # Time-series plots
@@ -21,21 +21,21 @@ def plot_trajectories(joint_positions, torques, end_effector_positions, target_p
     axs[0].set_ylabel("End-Effector Position (m)")
     axs[0].legend(["x", "y", "z"])
     axs[0].grid(True)
-    # Plot joint torques over time
-    axs[1].plot(torques)
+    # Plot joint inputs over time
+    axs[1].plot(inputs)
     axs[1].set_ylabel("Joint Velocity (rad/s)")
-    axs[1].legend([f"τ{i+1}" for i in range(torques.shape[1])])
+    axs[1].legend([f"τ{i+1}" for i in range(inputs.shape[1])])
     axs[1].grid(True)
     # Plot joint angles over time
-    axs[2].plot(joint_positions)
+    axs[2].plot(states)
     axs[2].set_ylabel("Joint Position (rad)")
     axs[2].set_xlabel("Time step")
-    axs[2].legend([f"q{i+1}" for i in range(joint_positions.shape[1])])
+    axs[2].legend([f"q{i+1}" for i in range(states.shape[1])])
     axs[2].grid(True)
     plt.tight_layout()
     plt.savefig("trajectory.png")
     plt.show()
-    # plt.close(fig)
+    plt.close(fig)
     
     # 3D interactive trajectory (Plotly)
     pos = end_effector_positions
@@ -110,9 +110,11 @@ def plot_trajectories(joint_positions, torques, end_effector_positions, target_p
         margin=dict(l=0, r=0, b=0, t=30),
         uirevision="fixed_axes"
     )
-
     # Save interactive HTML
-    fig3d.write_html("trajectory_3d.html")
+    if idx is not None:
+        fig3d.write_html(f"trajectory_3d_{idx}.html")
+    else:
+        fig3d.write_html("trajectory_3d.html")
 
 
 

@@ -4,8 +4,8 @@ import os
 import time
 
 import configs
-from utils.helpers import clear_solver_state, get_guess_from_solver_result, compute_end_effector_position, generate_random_initial_guess
-
+from utils.helpers import clear_solver_state, get_guess_from_solver_result, compute_end_effector_position, generate_random_initial_guess, get_traj
+from utils.plotting import plot_trajectories
 class MuJoCoSimulator:
     """
     MuJoCo simulator for the Franka Panda arm. Loads a MuJoCo model and provides step and reset functionality.
@@ -281,6 +281,9 @@ def simulate_closed_loop_mujoco(ocp, ocp_solver, mujoco_sim, x0, u_guess, N_sim=
                     # print("x_mpc:", x_mpc)
                     # print("x_mujoco:", simX[i+1, :])
                     # pos_mpc[i+1, :] = compute_end_effector_position(x_mpc)
+                    # if i == 14:
+                    #     x_traj, u_traj, Pos_traj = get_traj(ocp_solver, N=configs.Horizon, nx=configs.Num_State, nu=configs.Num_Input)
+                    #     plot_trajectories(x_traj, u_traj, Pos_traj, target_position=configs.target_position)
                     break
                 except Exception as e:
                     ocp_solver.reset()

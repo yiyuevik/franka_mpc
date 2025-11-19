@@ -26,7 +26,7 @@ from typing import List, Tuple
 # -------------------------
 # Manual configuration
 
-PROCESS_FOLDER = r"data/multimodality/parallel_rollout_20251016_101609"
+PROCESS_FOLDER = r"data/multimodality/parallel_rollout_20251105_1431"
 
 # TRIM controls how X (length H+1) is aligned to U (length H):
 #  - 'start': use X[:H] so X[t] aligns with U[t] (X[0]..X[H-1])

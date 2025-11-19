@@ -58,7 +58,7 @@ def generate_random_initial_guess(u3_min=None, u3_max=None, u5_min = None, u5_ma
     return u_guess
 
 def generate_grid_initial_guesses(u3_min, u3_max, step=5):
-
+    step = 20
     u3_range = np.linspace(u3_min, u3_max, num=step)
     u5_range = np.linspace(configs.U5_MIN, configs.U5_MAX, num=step)
     u6_range = np.linspace(configs.U6_MIN, configs.U6_MAX, num=step)
@@ -69,7 +69,7 @@ def generate_grid_initial_guesses(u3_min, u3_max, step=5):
     all_guesses = []
     for i in range(len(u3_flat)):
         u_guess = np.array([0, 0, u3_flat[i], 0,  u5_flat[i], u6_flat[i], 0])
-        # u_guess = np.random.uniform(-3, 3, size=7)
+        # u_guess = np.random.uniform(-6, 6, size=7)
         all_guesses.append(u_guess)
     return np.array(all_guesses)
 
@@ -103,13 +103,6 @@ def compute_end_effector_position_symbolic(q):
     T = T_fk_fun(q)
     return T[:3, 3]  # symbolic 3x1 MX
 
-def sample_states_around(x0, num_samples):
-    samples = []
-    for _ in range(num_samples):
-        dx = np.random.normal(configs.Noise_Mean, configs.Noise_Std, size= configs.Num_State)
-        x_sample = x0 + dx
-        samples.append(x_sample)
-    return samples
 
 def get_traj(ocp_solver, N, nx, nu):
     X = np.zeros((N+1, nx))
@@ -240,3 +233,41 @@ def random_rotvec():
     # 3. Construct rotvec
     rotvec = theta * u
     return rotvec
+
+def obstacle_constraint_numeric(q, o_p, o_s):
+    """
+    obstacle constraint value in numeric form.
+    Computes the squared distance from the end-effector position to an obstacle:
+    h(q) = || (p_ee(q) - o_p) ⊙ o_s ||^2
+    Returns float
+    """
+    p_ee = compute_end_effector_position(q)  # shape (3,)
+    diff = (p_ee - o_p) * o_s               # 逐元素缩放
+    return float(np.dot(diff, diff))        # sumsqr
+
+
+def sample_states_around(x0, num_samples):
+    samples = []
+    # Read obstacle info from configs
+    if not configs.Obstacle_Avoidance:
+        for _ in range(num_samples):
+            dx = np.random.normal(configs.Noise_Mean, configs.Noise_Std, size= configs.Num_State)
+            x_sample = x0 + dx
+            samples.append(x_sample)
+        return samples
+
+    obstacle_pos = np.array(configs.Obstacle_Position)
+    obstacle_scale = np.array(configs.Obstacle_Scale)
+    for _ in range(num_samples):
+        valid = False
+        while not valid:
+            dx = np.random.normal(configs.Noise_Mean, configs.Noise_Std, size=configs.Num_State)
+            x_sample = x0 + dx
+
+            if obstacle_constraint_numeric(x_sample, obstacle_pos, obstacle_scale)<1.0:
+                valid = False
+                continue
+            else:
+                valid = True
+                samples.append(x_sample)
+    return samples

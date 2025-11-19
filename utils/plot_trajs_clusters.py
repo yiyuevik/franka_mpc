@@ -7,17 +7,18 @@ import math
 # 读取路径
 script_dir = os.path.dirname(os.path.abspath(__file__))
 project_root = os.path.dirname(script_dir)
-folder_path = os.path.join(project_root, "data", "multimodality", "20250907_1633", "cluster")
+folder_path = os.path.join(project_root, "data", "multimodality", "20251031_1604", "cluster")
 
 
-files = sorted(glob.glob(os.path.join(folder_path, "cluster_*_trajX.npy")))
+files = sorted(glob.glob(os.path.join(folder_path, "trajX_*.npy")))
 
 num_files = len(files)
 
 if num_files < 6*6:
     rows = int(math.floor(math.sqrt(num_files)))
     cols = int(math.ceil(num_files / rows))
-    plt.subplots(rows, cols)
+    fig, axes = plt.subplots(rows, cols, figsize=(16, 12))
+    axes = axes.flatten()
 else:
     # only plot up to 36 files
     rows, cols = 6, 6
@@ -52,4 +53,5 @@ for j in range(len(files), rows * cols):
     fig.delaxes(axes[j])
 
 plt.tight_layout()
-plt.show()
+plt.savefig("trajectory.png")
+plt.close(fig)

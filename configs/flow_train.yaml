@@ -1,8 +1,8 @@
 data:
-  dir: data/multimodality/parallel_rollout_20251016_101609
-  state_pt: x_tensor_161497_20_7.pt
-  action_pt: u_tensor_161497_20_7.pt
-  x0_pt: x0_tensor_161497_7.pt
+  dir: data/multimodality/parallel_rollout_20251105_1414
+  state_pt: x_tensor_161500_20_7.pt
+  action_pt: u_tensor_161500_20_7.pt
+  x0_pt: x0_tensor_161500_7.pt
   normalize:
     state: gaussian
     action: gaussian
@@ -17,9 +17,9 @@ model:
 
 train:
   device: auto
-  batch_size: 32
-  lr: 0.0002
-  n_train_steps: 101000
+  batch_size: 640
+  lr: 0.001
+  n_train_steps: 10000
   save_freq: 5000
   save_dir: checkpoints
   log_every: 50

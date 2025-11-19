@@ -47,7 +47,7 @@ def create_ocp_solver(x0):
     
     # Constraints: initial state is fixed to x0. 
     ocp.constraints.x0 = x0
-    ocp.parameter_values = np.array([0.5068906, 0.2, 0.5902821, 2.38327818, 0.26047109, -1.37449648])
+    ocp.parameter_values = np.array([0.6068906, 0, 0.5902821, 2.38327818, 0.26047109, -1.37449648])
  
     q_min = np.array([
         -2.8973,

@@ -23,7 +23,7 @@ def main():
     # 1) Initial state (7 joint angles + 7 joint velocities)
     x0 = configs.x0
     # 2) Simulation parameters
-    N_sim = 80  # number of simulation steps
+    N_sim = 100  # number of simulation steps
     
     # 3) Initialize simulator and MPC controller
     mujoco_sim = MuJoCoSimulator()
@@ -32,13 +32,13 @@ def main():
     # 4) Set initial control guess for the solver
     u_guess = generate_random_initial_guess()
     # If desired, one can manually specify a particular initial guess, e.g.:
-    # u_guess = np.array([0.6170361992882429,
-    #     -1.1329409713908631,
-    #     2.385604793296298,
-    #     0.25261163864176917,
-    #     -2.763490638349957,
-    #     2.63308756591979,
-    #     0.48772321139013464], dtype=float)  # all zeros, or any other specific guess
+    # u_guess = np.array([0.0,
+    #     0.0,
+    #     1.7368421052631575,
+    #     0.0,
+    #     -2.3684210526315788,
+    #     -3.0,
+    #     0.0], dtype=float)  # all zeros, or any other specific guess
 
 
     
