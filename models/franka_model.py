@@ -10,7 +10,23 @@ from acados_template import AcadosModel
 import urdf2casadi.urdfparser as u2c
 import configs
 import os
-from utils.helpers import log_SO3_vee, SO3_target_from_log, obstacle_constraint_expr
+from utils.helpers import log_SO3_vee, SO3_target_from_log, obstacle_constraint_expr, _initialize_forward_kinematics
+
+
+_franka_parser = None
+
+def _get_franka_parser():
+    global _franka_parser
+    if _franka_parser is None:
+        parser = u2c.URDFparser()
+
+        project_root = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
+        urdf_path = os.path.join(project_root, "urdf", "panda_arm.urdf")
+
+        parser.from_file(urdf_path)
+        _franka_parser = parser
+
+    return _franka_parser
 
 def export_franka_ode_model():
     """
@@ -19,11 +35,7 @@ def export_franka_ode_model():
     Input u: joint velocities [qdot] ∈ R^7
     Dynamics: q_next = q + dt * qdot
     """
-    franka_parser = u2c.URDFparser()
-    # Load the URDF model of the robot
-    project_root = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
-    urdf_path = os.path.join(project_root, "urdf", "panda_arm.urdf")
-    franka_parser.from_file(urdf_path)
+    franka_parser = _get_franka_parser()
     
     # Dimensions and constants
     nq = configs.Num_State       # 7 joint angles
@@ -41,7 +53,8 @@ def export_franka_ode_model():
 
     # Forward kinematics for end-effector position (for cost output, not part of state)
     fk_dict = franka_parser.get_forward_kinematics(root_link, tip_link)
-    T_fk_fun = fk_dict["T_fk"]
+    T_fk_fun = _initialize_forward_kinematics()
+    # T_fk_fun = fk_dict["T_fk"]
     T_fk_expr = T_fk_fun(x_sym)
 
     pos = T_fk_expr[:3, 3]  # end-effector position (3x1)

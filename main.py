@@ -12,16 +12,18 @@ from scripts import (
     train,
     run_closed_loop_flow,
     compare_real_vs_sim,
+    analyze_modality,
 )
 
 if __name__ == "__main__":
     # collect_multimodal_trajectories()
     # run_closed_loop()
     # calculate_axis_importance()
-    # data_collect()
+    data_collect()
     # mpc_ipopt_franka()
     # smoke_env()
     # generate_dataset()
     # train()
-    run_closed_loop_flow()
+    # run_closed_loop_flow()
     # compare_real_vs_sim()
+    # analyze_modality()

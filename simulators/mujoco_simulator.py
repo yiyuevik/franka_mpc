@@ -227,11 +227,11 @@ def simulate_closed_loop_mujoco(ocp, ocp_solver, mujoco_sim, x0, u_guess, N_sim=
             u_opt = ocp_solver.solve_for_x0(x0_bar=x0)
             # Prepare warm-start for next iteration
             u_guess, x_guess = get_guess_from_solver_result(ocp_solver, configs.Horizon)
-            clear_solver_state(ocp_solver, configs.Horizon)
-            for j in range(configs.Horizon):
-                ocp_solver.set(j, "u", u_guess[:, j])
-                ocp_solver.set(j, "x", x_guess[:, j])
-            ocp_solver.set(configs.Horizon, "x", x_guess[:, -1])
+                                # clear_solver_state(ocp_solver, configs.Horizon)
+                                # for j in range(configs.Horizon):
+                                #     ocp_solver.set(j, "u", u_guess[:, j])
+                                #     ocp_solver.set(j, "x", x_guess[:, j])
+                                # ocp_solver.set(configs.Horizon, "x", x_guess[:, -1])
             # x_mpc = ocp_solver.get(0, "x")
             # print("x_mpc:", x_mpc)
             # Apply control and simulate one step in MuJoCo
@@ -263,12 +263,12 @@ def simulate_closed_loop_mujoco(ocp, ocp_solver, mujoco_sim, x0, u_guess, N_sim=
                     u_opt = ocp_solver.solve_for_x0(x0_bar=simX[i, :])
                     # Prepare warm-start for next iteration
                     u_guess, x_guess = get_guess_from_solver_result(ocp_solver, configs.Horizon)
-                    ocp_solver.reset()
-                    # u_guess = generate_random_initial_guess()
-                    for j in range(configs.Horizon):
-                        ocp_solver.set(j, "u", u_guess[:, j])
-                        ocp_solver.set(j, "x", x_guess[:, j])
-                    ocp_solver.set(configs.Horizon, "x", x_guess[:, -1])
+                                    # ocp_solver.reset()
+                                    # # u_guess = generate_random_initial_guess()
+                                    # for j in range(configs.Horizon):
+                                    #     ocp_solver.set(j, "u", u_guess[:, j])
+                                    #     ocp_solver.set(j, "x", x_guess[:, j])
+                                    # ocp_solver.set(configs.Horizon, "x", x_guess[:, -1])
                     # ocp_solver.set(config.Horizon//2, "u", u_guess)
                     
                     # Apply control and simulate one step in MuJoCo

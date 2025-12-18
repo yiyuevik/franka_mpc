@@ -14,3 +14,4 @@ tensorboard>=2.14
 tqdm>=4.66
 POT>=0.9.4
 torchdiffeq==0.2.3
+pandas

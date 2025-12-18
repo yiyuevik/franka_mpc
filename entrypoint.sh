@@ -1,6 +1,8 @@
 #!/bin/bash
 cd /app
 python main.py
+# python -m scripts.convert_to_csv
+
 # python -m utils.plot_trajs_clusters
 # python -m utils.plot_mpc_multimodality
 # python -m scripts.plot_traj

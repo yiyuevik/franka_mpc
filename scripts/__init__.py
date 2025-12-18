@@ -8,3 +8,4 @@ from .generate_dataset import main as generate_dataset
 from .train import main as train
 from .run_closed_loop_flow import main as run_closed_loop_flow
 from .compare_real_vs_sim import main as compare_real_vs_sim
+from .analyze_modality import main as analyze_modality

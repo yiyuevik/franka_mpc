@@ -10,6 +10,7 @@ import plotly.graph_objects as go  # NEW
 import configs
 from simulators.mujoco_simulator import MuJoCoSimulator
 from controllers.flow_policy import FlowPolicy  # Euler-batched version
+from utils.helpers import compute_end_effector_position
 
 # ---------- helpers ----------
 
@@ -24,6 +25,48 @@ def _segments_from_traj(traj_2d: np.ndarray):
     """(T,2) -> (T-1,2,2) segments for LineCollection."""
     return np.stack([traj_2d[:-1], traj_2d[1:]], axis=1)
 
+def compute_trajectory_cost(q_traj: np.ndarray, target_pos: np.ndarray) -> dict:
+    """
+    计算单条轨迹的成本
+    
+    Args:
+        q_traj: (T, 7) - 关节角度轨迹
+        target_pos: (3,) - 目标位置
+        
+    Returns:
+        dict with cost breakdown and total
+    """
+    T = len(q_traj)
+    
+    # 计算末端位置轨迹
+    pos_traj = np.array([compute_end_effector_position(q) for q in q_traj])  # (T, 3)
+    
+    # 计算到目标的距离
+    dists = np.linalg.norm(pos_traj - target_pos, axis=1)  # (T,)
+    
+    # 位置成本: Q_pos * sum(dists[:-1]) + P_pos * dists[-1]
+    stage_cost = configs.Q_pos[0, 0] * np.sum(dists[:-1]) *10
+    terminal_cost = configs.P_pos[0, 0] * dists[-1]
+    position_cost = stage_cost + terminal_cost
+    
+    # 动作成本: R * sum(action^2)
+    # 这里 action 是相邻状态的差分（速度）
+    action_traj = np.diff(q_traj, axis=0)  # (T-1, 7)
+    action_cost = configs.R[0, 0] * np.sum(action_traj ** 2) * 10000
+    
+    # 总成本
+    total_cost = position_cost + action_cost
+    
+    return {
+        'total': total_cost,
+        'position': position_cost,
+        'stage': stage_cost,
+        'terminal': terminal_cost,
+        'action': action_cost,
+        'final_distance': dists[-1],
+        'mean_distance': np.mean(dists),
+    }
+
 def save_sim_trajs_csv(poss_list, out_dir):
     os.makedirs(out_dir, exist_ok=True)
     for k, pos in enumerate(poss_list):
@@ -34,6 +77,28 @@ def save_sim_trajs_csv(poss_list, out_dir):
             for t, p in enumerate(pos):
                 w.writerow([t, float(p[0]), float(p[1]), float(p[2])])
         print(f"💾 saved: {path}")
+
+def save_sim_q_trajs_ros_format(q_trajs_list, out_dir, dt=0.1):
+    """
+    保存和 ROS 真实运行时类似格式的关节轨迹：
+    每个文件：q_now_1.csv, q_now_2.csv, ...
+    列为: stamp_sec, q1, ..., q7
+
+    q_trajs_list: list of arrays, 每个 (T, 7)
+    dt: 假定的时间间隔（秒），仅用于 stamp_sec；可根据需要改。
+    """
+    os.makedirs(out_dir, exist_ok=True)
+    for k, q_traj in enumerate(q_trajs_list):
+        path = os.path.join(out_dir, f"q_now_{k+1}.csv")
+        with open(path, "w", newline="") as f:
+            w = csv.writer(f)
+            header = ["stamp_sec"] + [f"q{i}" for i in range(1, 8)]
+            w.writerow(header)
+            for t, q in enumerate(q_traj):
+                stamp = t * dt
+                w.writerow([stamp] + [float(v) for v in q.tolist()])
+        print(f"💾 saved ROS-style q traj: {path}")
+
 
 # def plot_multimodal_trajectories_3d_html(
 #     poss_list,
@@ -192,7 +257,45 @@ def plot_multimodal_trajectories_3d_html(
     fig.write_html(out_html, include_plotlyjs='cdn')
     print(f"✅ saved 3D interactive HTML to: {out_html}")
 
-
+def save_trajectory_costs(costs_list, out_dir):
+    """
+    保存所有轨迹的成本信息到 CSV
+    
+    Args:
+        costs_list: list of dicts - 每条轨迹的成本字典
+        out_dir: str - 输出目录
+    """
+    os.makedirs(out_dir, exist_ok=True)
+    path = os.path.join(out_dir, "trajectory_costs.csv")
+    
+    with open(path, "w", newline="") as f:
+        w = csv.writer(f)
+        # 写表头
+        w.writerow([
+            "trajectory_id", 
+            "total_cost", 
+            "position_cost", 
+            "stage_cost", 
+            "terminal_cost",
+            "action_cost",
+            "final_distance",
+            "mean_distance"
+        ])
+        
+        # 写每条轨迹的成本
+        for k, cost_dict in enumerate(costs_list):
+            w.writerow([
+                k + 1,
+                float(cost_dict['total']),
+                float(cost_dict['position']),
+                float(cost_dict['stage']),
+                float(cost_dict['terminal']),
+                float(cost_dict['action']),
+                float(cost_dict['final_distance']),
+                float(cost_dict['mean_distance']),
+            ])
+    
+    print(f"💾 saved trajectory costs: {path}")
 # def plot_multimodal_trajectories_2d(
 #     poss_list, plane='xy', out_path='multi_trajs.png',
 #     target_pos=None, start_pos=None, title='Flow (multi-rollouts)'
@@ -249,7 +352,8 @@ def plot_multimodal_trajectories_3d_html(
 
 # ---------- main ----------
 
-def main(cfg_path="configs/flow_eval.yaml", n_rollouts=64, plane='xy', save_dir="data/models/flow/multimodal", batch_size=None):
+def main(cfg_path="configs/flow_eval.yaml", n_rollouts=64, save_dir="data/models/flow/multimodal", 
+         batch_size=None, n_samples = 100, cost_type = 'target'):
     # load cfg
     with open(cfg_path, 'r') as f:
         cfg = yaml.safe_load(f)
@@ -266,6 +370,7 @@ def main(cfg_path="configs/flow_eval.yaml", n_rollouts=64, plane='xy', save_dir=
     init_qd = np.zeros(7, dtype=np.float64)
     for sim in sims:
         sim.reset(q_init=init_q, qd_init=init_qd)
+
 
     # policy (single model) — GPU batched
     md = cfg['model']
@@ -284,6 +389,8 @@ def main(cfg_path="configs/flow_eval.yaml", n_rollouts=64, plane='xy', save_dir=
         use_amp        = pol.get('use_amp', True),
         amp_dtype      = torch.float16 if pol.get('amp_dtype', 'fp16') == 'fp16' else torch.bfloat16,
         matmul_precision = pol.get('matmul_precision', 'high'),
+        cost_type        = cost_type,
+        n_samples      = n_samples,
     )
 
     # rollout length
@@ -295,9 +402,12 @@ def main(cfg_path="configs/flow_eval.yaml", n_rollouts=64, plane='xy', save_dir=
 
     # storage
     poss_list = []
+    q_trajs_list = [] 
     for sim in sims:
         pos = sim.get_end_effector_pos()
         poss_list.append([pos.copy()])  # will append per-step
+        q0 = sim.data.qpos[:md['state_dim']].copy()
+        q_trajs_list.append([q0])
 
     # optional chunking (VRAM control)
     B_total = n_rollouts
@@ -318,13 +428,53 @@ def main(cfg_path="configs/flow_eval.yaml", n_rollouts=64, plane='xy', save_dir=
                 pos = sims[k].get_end_effector_pos()
                 poss_list[k].append(pos.copy())
 
+                q_now = sims[k].data.qpos[:md['state_dim']].copy()
+                q_trajs_list[k].append(q_now)
+
     # to ndarray (T+1, 3)
     poss_list = [np.array(p) for p in poss_list]
+    q_trajs_list = [np.array(q) for q in q_trajs_list]
+
+    # ========== 计算所有轨迹的成本 ==========
+    print(f"\n📊 Computing trajectory costs...")
+    target_pos = np.array(configs.target_position)
+    costs_list = []
     
+    for k, q_traj in enumerate(q_trajs_list):
+        cost_dict = compute_trajectory_cost(q_traj, target_pos)
+        costs_list.append(cost_dict)
+        
+        # 每10条轨迹打印一次进度
+        if (k + 1) % 10 == 0:
+            print(f"   Computed costs for {k+1}/{n_rollouts} trajectories...")
+    
+    # 统计信息
+    total_costs = np.array([c['total'] for c in costs_list])
+    final_dists = np.array([c['final_distance'] for c in costs_list])
+    position_costs = np.array([c['position'] for c in costs_list])
+    action_costs = np.array([c['action'] for c in costs_list])
+    
+    print(f"\n📈 Cost Statistics:")
+    print(f"   Total Cost     - Mean: {np.mean(total_costs):.4f}, Std: {np.std(total_costs):.4f}, Min: {np.min(total_costs):.4f}, Max: {np.max(total_costs):.4f}")
+    print(f"   Position Cost  - Mean: {np.mean(position_costs):.4f}, Std: {np.std(position_costs):.4f}")
+    print(f"   Action Cost    - Mean: {np.mean(action_costs):.4f}, Std: {np.std(action_costs):.4f}")
+    print(f"   Final Distance - Mean: {np.mean(final_dists):.4f}, Std: {np.std(final_dists):.4f}, Min: {np.min(final_dists):.4f}, Max: {np.max(final_dists):.4f}")
+    
+    # 找出最好和最差的轨迹
+    best_idx = np.argmin(total_costs)
+    worst_idx = np.argmax(total_costs)
+    print(f"\n🏆 Best trajectory: #{best_idx+1} (total_cost={total_costs[best_idx]:.4f}, final_dist={final_dists[best_idx]:.4f})")
+    print(f"⚠️  Worst trajectory: #{worst_idx+1} (total_cost={total_costs[worst_idx]:.4f}, final_dist={final_dists[worst_idx]:.4f})")
+
+    # 保存成本到 CSV
+    save_trajectory_costs(costs_list, save_dir)
+
 
     csv_dir = os.path.join(save_dir, "sim_trajs_csv")
     save_sim_trajs_csv(poss_list, csv_dir)
 
+    q_csv_dir = os.path.join(save_dir, "sim_q_trajs_ros")
+    save_sim_q_trajs_ros_format(q_trajs_list, q_csv_dir, dt=0.1)
     
     # --- 3D interactive HTML (multi trajectories) ---
     out_html = os.path.join(save_dir, "multi_trajs_3d.html")
@@ -352,7 +502,11 @@ if __name__ == "__main__":
     p.add_argument("--cfg", type=str, default="configs/flow_eval.yaml")
     p.add_argument("--n", type=int, default=64, help="number of rollouts")
     p.add_argument("--plane", type=str, default="xz", choices=["xy","xz","yz"])
-    p.add_argument("--save_dir", type=str, default="data/models/flow/multimodal")
+    p.add_argument("--save_dir", type=str, default="data/models/flow2/multimodal")
     p.add_argument("--batch", type=int, default=None, help="GPU batch size per forward; default=n")
+    p.add_argument("--n_samples", type=int, default=1, help="samples per state for cost selection")
+    p.add_argument("--cost_type", type=str, default="none", 
+                   choices=["none", "target", "obstacle", "smoothness"],
+                   help="cost function type")
     args = p.parse_args()
-    main(args.cfg, args.n, args.plane, args.save_dir, args.batch)
+    main(args.cfg, args.n, args.save_dir, args.batch, args.n_samples, args.cost_type)

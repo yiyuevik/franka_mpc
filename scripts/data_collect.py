@@ -69,15 +69,16 @@ def run_main_group(x0_init, group_id, N_step, N_horizon, n_branch, n_branch_work
     branch_features = []
 
 
-    u_guess = generate_random_initial_guess()
+    u_guess_init = generate_random_initial_guess()
     for j in range(configs.Horizon):
         ocp_solver.set(j, "x", x0_init)
-        ocp_solver.set(j, "u", u_guess)
+        ocp_solver.set(j, "u", u_guess_init)
     ocp_solver.set(configs.Horizon, "x", x0_init)
     x_curr = x0_init.copy()
+    pos_main.append(mujoco_sim.get_end_effector_pos())
     X_traj[0, :] = x0_init
     branch_points = sample_states_around(x_curr, n_branch)
-    future_0 = solve_branches_for_one_point(branch_points, x0_init, u_guess, N_horizon)
+    future_0 = solve_branches_for_one_point(branch_points, x0_init, u_guess_init, N_horizon)
     # future = branch_pool_th.submit(solve_branches_for_one_point, branch_points, u_guess, N_horizon)
     
     # ======================== generate data for control step loop =============================
@@ -168,6 +169,7 @@ def run_main_group(x0_init, group_id, N_step, N_horizon, n_branch, n_branch_work
         "Num_Group": configs.Num_Group,
         "ts": configs.Ts,
         "success": success,
+        "initial_u_guess": u_guess_init.tolist(),
         "actual_steps": len(simX_main) - 1
     }
     with open(os.path.join(save_dir, "config.yaml"), "w") as f:
@@ -187,14 +189,18 @@ def run_main_group(x0_init, group_id, N_step, N_horizon, n_branch, n_branch_work
     branch_pool.shutdown(wait=True)
     # branch_pool_th.shutdown(wait=True)
 
-    return X_traj
+    return pos_main
 
 # --- Main process ---
 def main():
 
     # Initial state
     x0 = configs.x0
-    main_x0_list = sample_states_around(x0, configs.Num_Group)
+    main_x0_list = []
+    for i in range(configs.Num_Group):
+        main_x0_list.append(x0)
+    
+    # main_x0_list = sample_states_around(x0, configs.Num_Group)
 
     N_step = 100
     N_horizon = configs.Horizon
@@ -228,7 +234,7 @@ def main():
     clusters = []
     rep_traj_list = []
     cluster_assignment = [-1] * configs.Num_Group
-    CLUSTER_POS_THRESHOLD = 1
+    CLUSTER_POS_THRESHOLD = 0.05
     threshold_sq = CLUSTER_POS_THRESHOLD ** 2
 
     for i, traj in enumerate(x_traj_all):

@@ -1,5 +1,5 @@
 data:
-  dir: data/multimodality/parallel_rollout_20251105_1414
+  dir: data/multimodality/parallel_rollout_20251207_1749
   state_pt: x_tensor_161500_20_7.pt
   action_pt: u_tensor_161500_20_7.pt
   x0_pt: x0_tensor_161500_7.pt
